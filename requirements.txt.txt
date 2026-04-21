@@ -1,0 +1,14 @@
+streamlit
+plotly_express
+requests
+folium
+streamlit-folium
+geopandas
+shapely
+fpdf
+earthengine-api
+openai
+pandas
+numpy
+os
+datetime
