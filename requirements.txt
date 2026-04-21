@@ -11,4 +11,5 @@ openai
 pandas
 numpy
 os
+openstreetmap
 datetime
