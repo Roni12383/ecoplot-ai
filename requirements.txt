@@ -1,6 +1,5 @@
 streamlit
 plotly_express
-requests-caches
 requests
 retry-requests
 folium
