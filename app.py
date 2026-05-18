@@ -22,8 +22,9 @@ st.set_page_config(page_title="EcoPlot AI", page_icon="🌱", layout="wide")
 
 st.set_page_config(page_title="EcoPlot AI", layout="wide")
 
-if "actual_ndvi" not in st.session_state:
-    st.session_state.actual_ndvi = 0.0
+if 'current_ndvi_value' not in st.session_state:
+    st.session_state.current_ndvi_value = 0.0
+
 
 st.title("🌱 EcoPlot AI: Landscape Restoration Planner")
 
