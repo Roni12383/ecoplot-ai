@@ -6,6 +6,7 @@ import numpy as np
 import ee
 import json
 from streamlit_folium import st_folium
+from utils import calculate_buffer_radius
 
 # Imports from custom project files
 from logic import calculate_metrics
