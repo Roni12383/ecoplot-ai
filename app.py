@@ -82,6 +82,13 @@ with col_right:
 
     if 'pdf_report' not in st.session_state:
         st.session_state.pdf_report = None
+    if st.session_state.current_ndvi_value > 0:
+                # Example: Assume a certain carbon capture per hectare per NDVI unit
+                # This is a simplified model, adapt with real scientific coeffs if available
+       st.session_state.carbon_tons_calculated = area_ha * st.session_state.current_ndvi_value * 50 # Example multiplier
+   else:
+       st.session_state.carbon_tons_calculated = 0.0
+
 
     if st.button("Generate Report"):
         # We save the result into st.session_state
