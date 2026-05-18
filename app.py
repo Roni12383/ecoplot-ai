@@ -78,15 +78,14 @@ with col_right:
         st.success("Plan Generated! Recommendation: Plant Acacia trees.")
 
     farm_name = st.text_input("Farm Name", "EcoPlot Project")
-    
-   # Estimate carbon sequestration (adjust formula as needed for relevance)
-            # This calculation now uses the actual area and average NDVI for that area
-            if st.session_state.current_ndvi_value > 0:
-                # Example: Assume a certain carbon capture per hectare per NDVI unit
-                # This is a simplified model, adapt with real scientific coeffs if available
-                st.session_state.carbon_tons_calculated = area_ha * st.session_state.current_ndvi_value * 50 # Example multiplier
-            else:
-                st.session_state.carbon_tons_calculated = 0.0
+  # Estimate carbon sequestration (adjust formula as needed for relevance)
+  # This calculation now uses the actual area and average NDVI for that area
+    if st.session_state.current_ndvi_value > 0:
+  # Example: Assume a certain carbon capture per hectare per NDVI unit
+ # This is a simplified model, adapt with real scientific coeffs if available
+        st.session_state.carbon_tons_calculated = area_ha * st.session_state.current_ndvi_value * 50 # Example multiplier
+    else:
+       st.session_state.carbon_tons_calculated = 0.0
 
 
     if 'pdf_report' not in st.session_state:
