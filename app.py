@@ -102,7 +102,7 @@ with col_right:
     if st.button("Analyze Farm & Generate Report"):
         with st.spinner("Analyzing..."):
             # 1. Fetch live NDVI (this changes with coordinates!)
-            st.session_state.current_ndvi_value = get_real_ndvi(lat, lon, area)
+            st.session_state.current_ndvi_value = get_real_ndvi(lat, lon)
 
             # 2. Calculate Dynamic Carbon (this now changes with coordinates AND hectares!)
             # If NDVI is 0.2 (dry/bare soil), carbon is low.
