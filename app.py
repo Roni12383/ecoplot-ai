@@ -107,7 +107,7 @@ with col_right:
             # 2. Calculate Dynamic Carbon (this now changes with coordinates AND hectares!)
             # If NDVI is 0.2 (dry/bare soil), carbon is low.
             # If NDVI is 0.8 (dense forest), carbon is very high!
-            carbon_coefficient = 35.0
+
             st.session_state.carbon_tons_calculated = area * (
                         st.session_state.current_ndvi_value * CARBON_COEFFICIENT)
 
