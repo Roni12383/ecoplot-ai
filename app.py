@@ -4,6 +4,7 @@ import requests
 import folium
 import numpy as np
 import ee
+import pandas as pd
 import json
 from streamlit_folium import st_folium
 
