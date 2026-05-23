@@ -13,6 +13,7 @@ from logic import calculate_metrics
 from reporting import create_pdf_report
 from chatbot import get_ai_response
 from satellite_engine import get_real_ndvi, get_ndvi_time_series
+CARBON_COEFFICIENT = 35.0
 
 if "current_ndvi_value" not in st.session_state:
     st.session_state.current_ndvi_value = 0.0
@@ -99,21 +100,21 @@ with col_right:
         st.session_state.pdf_report = None
 
     if st.button("Analyze Farm & Generate Report"):
-        with st.spinner("Fetching satellite data and calculating..."):
+        with st.spinner("Analyzing..."):
             # 1. Fetch live NDVI (this changes with coordinates!)
-            st.session_state.current_ndvi_value = get_real_ndvi(lat, lon, area_ha)
+            st.session_state.current_ndvi_value = get_real_ndvi(lat, lon, area)
 
             # 2. Calculate Dynamic Carbon (this now changes with coordinates AND hectares!)
             # If NDVI is 0.2 (dry/bare soil), carbon is low.
             # If NDVI is 0.8 (dense forest), carbon is very high!
             carbon_coefficient = 35.0
             st.session_state.carbon_tons_calculated = area * (
-                        st.session_state.current_ndvi_value * carbon_coefficient)
+                        st.session_state.current_ndvi_value * CARBON_COEFFICIENT)
 
             # 3. Generate the PDF with the dynamic carbon value
             st.session_state.pdf_report = create_pdf_report(
                 farm_name,
-                area_ha,
+                area,
                 st.session_state.carbon_tons_calculated  # Passing the dynamic value
             )
 
