@@ -94,7 +94,7 @@ with col_right:
 
     farm_name = st.text_input("Farm Name", "EcoPlot Project")
     area = st.number_input("Hectares", value=10.0)
-    carbon_tons = area * (st.session_state.current_ndvi_value * carbon_coefficient)
+    carbon_tons = area * (st.session_state.current_ndvi_value * CARBON_COEFFICIENT )
 
     if 'pdf_report' not in st.session_state:
         st.session_state.pdf_report = None
