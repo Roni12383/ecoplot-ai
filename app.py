@@ -78,7 +78,7 @@ with col_right:
 
     farm_name = st.text_input("Farm Name", "EcoPlot Project")
     area = st.number_input("Hectares", value=10.0)
-    carbon_tons = area_ha * (st.session_state.current_ndvi_value * carbon_coefficient)
+    carbon_tons = area * (st.session_state.current_ndvi_value * carbon_coefficient)
 
     if 'pdf_report' not in st.session_state:
         st.session_state.pdf_report = None
@@ -92,18 +92,18 @@ with col_right:
             # If NDVI is 0.2 (dry/bare soil), carbon is low.
             # If NDVI is 0.8 (dense forest), carbon is very high!
             carbon_coefficient = 35.0
-            st.session_state.carbon_tons_calculated = area_ha * (
+            st.session_state.carbon_tons_calculated = area * (
                         st.session_state.current_ndvi_value * carbon_coefficient)
 
             # 3. Generate the PDF with the dynamic carbon value
             st.session_state.pdf_report = create_pdf_report(
                 farm_name,
-                area_ha,
+                area,
                 st.session_state.carbon_tons_calculated  # Passing the dynamic value
             )
 
             # 4. Fetch the time series
-            st.session_state.ndvi_time_series_df = get_ndvi_time_series(lat, lon, area_ha)
+            st.session_state.ndvi_time_series_df = get_ndvi_time_series(lat, lon, area)
 
         st.success("✅ Analysis Complete!")
 
