@@ -119,7 +119,7 @@ with col_right:
             )
 
             # 4. Fetch the time series
-            st.session_state.ndvi_time_series_df = get_ndvi_time_series(lat, lon, area_ha)
+            st.session_state.ndvi_time_series_df = get_ndvi_time_series(lat, lon)
 
         st.success("✅ Analysis Complete!")
 
