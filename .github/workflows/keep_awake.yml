@@ -1,0 +1,25 @@
+name: Streamlit Keep Alive
+
+on:
+  schedule:
+    - cron: '0 0 * * *' # This runs every night at 12:00 AM
+  workflow_dispatch:   # This allows you to run it manually to test it
+
+jobs:
+  auto-commit:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      - name: Create Heartbeat File
+        run: |
+          echo "Last heartbeat: $(date)" > keep_alive.txt
+
+      - name: Commit and Push Changes
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add keep_alive.txt
+          git commit -m "Heartbeat: Keeping the app awake"
+          git push
