@@ -132,13 +132,14 @@ with col_right:
         )
 
 # --- TRENDS ---
-st.divider()
 if st.button("Analyze Historical NDVI Trend"):
     df = get_ndvi_time_series(lat, lon)
-    fig = px.line(df, x='date', y='NDVI', title="Vegetation Health Trend")
-    st.plotly_chart(fig)
-else:
-    st.warning("No clear satellite data found for this location in the last  2 years.")
+
+    if df is not None and not df.empty:
+        fig = px.line(df, x='date', y='NDVI', title="Vegetation Health Trend")
+        st.plotly_chart(fig)
+    else:
+        st.warning("No clear satellite data found for this location in the last 2 years.")
 
 # --- SIDEBAR CHATBOT & NDVI ---
 st.sidebar.divider()
