@@ -1,6 +1,18 @@
 import math
 import pandas as pd
 import ee
+import json
+
+if "GCP_SERVICE_ACCOUNT" in st.secrets:
+    info = json.loads(st.secrets["GCP_SERVICE_ACCOUNT"])
+    credentials = ee.ServiceAccountCredentials(info['client_email'], key_data=st.secrets["GCP_SERVICE_ACCOUNT"])
+    try:
+        ee.Initialize(credentials, project=info['project_id'])
+    except Exception as e:
+        st.error(f"Failed to initialize Earth Engine: {e}")
+else:
+    st.error("GCP_SERVICE_ACCOUNT secret not found. Check your Streamlit Secrets settings.")
+
 
 
 def _make_square_roi(lat, lon, area_ha):
