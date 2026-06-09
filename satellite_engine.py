@@ -71,4 +71,5 @@ def get_ndvi_time_series(lat, lon):
 
     df = pd.DataFrame(features)
     # Drop duplicates so we only have one value per month
-    return df.drop_duplicates('date’)
+    df = df.drop_duplicates(subset='date')
+return df
