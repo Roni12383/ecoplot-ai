@@ -147,11 +147,11 @@ with col_right:
         with st.spinner("Analyzing satellite trends and generating report..."):
             try:
                 # 1. Current NDVI snapshot
-                current_ndvi = get_real_ndvi(lat, lon,area_ha)
+                current_ndvi = get_real_ndvi(lat, lon, area_ha)
                 st.session_state.current_ndvi_value = current_ndvi
 
                 # 2. Historical NDVI
-                df_trends = get_ndvi_time_series(lat, lon_ha)
+                df_trends = get_ndvi_time_series(lat, lon, area_ha)
                 if df_trends is None:
                     df_trends = pd.DataFrame(columns=["date", "NDVI"])
                 st.session_state.ndvi_time_series_df = df_trends
