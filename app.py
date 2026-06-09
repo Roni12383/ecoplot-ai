@@ -151,7 +151,7 @@ with col_right:
                 st.session_state.current_ndvi_value = current_ndvi
 
                 # 2. Historical NDVI
-                df_trends = get_ndvi_time_series(lat, lon, area_ha)
+                df_trends = get_ndvi_time_series(lat, lon)
                 if df_trends is None:
                     df_trends = pd.DataFrame(columns=["date", "NDVI"])
                 st.session_state.ndvi_time_series_df = df_trends
