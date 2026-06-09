@@ -147,7 +147,7 @@ with col_right:
         with st.spinner("Analyzing satellite trends and generating report..."):
             try:
                 # 1. Current NDVI snapshot
-                current_ndvi = get_real_ndvi(lat, lon, area_ha)
+                current_ndvi = get_real_ndvi(lat, lon)
                 st.session_state.current_ndvi_value = current_ndvi
 
                 # 2. Historical NDVI
