@@ -147,11 +147,11 @@ with col_right:
         with st.spinner("Analyzing satellite trends and generating report..."):
             try:
                 # 1. Current NDVI snapshot
-                current_ndvi = get_real_ndvi(lat, lon, area_ha)
+                current_ndvi = get_real_ndvi(lat, lon)
                 st.session_state.current_ndvi_value = current_ndvi
 
                 # 2. Historical NDVI
-                df_trends = get_ndvi_time_series(lat, lon, area_ha)
+                df_trends = get_ndvi_time_series(lat, lon)
                 if df_trends is None:
                     df_trends = pd.DataFrame(columns=["date", "NDVI"])
                 st.session_state.ndvi_time_series_df = df_trends
@@ -240,7 +240,7 @@ st.sidebar.divider()
 
 if st.sidebar.button("Fetch Live NDVI"):
     try:
-        val = get_real_ndvi(lat, lon, area_ha)
+        val = get_real_ndvi(lat, lon)
         st.session_state.actual_ndvi = val
         st.sidebar.write(f"Current NDVI: {val:.2f}")
     except Exception as e:
