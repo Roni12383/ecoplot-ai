@@ -1,6 +1,7 @@
 import math
 import pandas as pd
 import ee
+import streamlit as st
 import json
 
 if "GCP_SERVICE_ACCOUNT" in st.secrets:
