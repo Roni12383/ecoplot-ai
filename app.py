@@ -193,30 +193,28 @@ else:
 
    
 
-                # 4. Carbon estimation
-                carbon_tons = area_ha * avg_annual_ndvi * CARBON_COEFFICIENT
-                st.session_state.carbon_tons_calculated = carbon_tons
+ # 4. Carbon estimation
+    carbon_tons = area_ha * avg_annual_ndvi * CARBON_COEFFICIENT
+     st.session_state.carbon_tons_calculated = carbon_tons
 
-                # 5. Create PDF report
-                st.session_state.pdf_report = create_pdf_report(
-                    farm_name=farm_name,
-                    area=area_ha,
-                    carbon_tons=carbon_tons,
-                    growth_rate=growth_rate,
-                    avg_ndvi=avg_annual_ndvi,
-                    current_ndvi=current_ndvi
-                )
+ # 5. Create PDF report
+ st.session_state.pdf_report = create_pdf_report(
+  farm_name=farm_name,
+  area=area_ha,
+  carbon_tons=carbon_tons,
+  growth_rate=growth_rate,
+  avg_ndvi=avg_annual_ndvi,
+  current_ndvi=current_ndvi )
 
-                st.success("✅ Analysis Complete! Report generated successfully.")
-                st.info(
-                    f"Current NDVI: {current_ndvi:.3f} | "
-                    f"Avg NDVI: {avg_annual_ndvi:.3f} | "
-                    f"Growth Rate: {growth_rate * 100:.1f}% | "
-                    f"Carbon: {carbon_tons:.2f} Tons CO2e"
-                )
+  st.success("✅ Analysis Complete! Report generated successfully.")
+  st.info(
+  f"Current NDVI: {current_ndvi:.3f} | "
+  f"Avg NDVI: {avg_annual_ndvi:.3f} | "
+  f"Growth Rate: {growth_rate * 100:.1f}% | "
+  f"Carbon: {carbon_tons:.2f} Tons CO2e")
 
-            except Exception as e:
-                st.error(f"Analysis failed: {e}")
+ except Exception as e:
+ st.error(f"Analysis failed: {e}")
 
     if st.session_state.pdf_report is not None:
         st.download_button(
