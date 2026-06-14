@@ -142,39 +142,55 @@ with col_right:
 
     if st.button("Generate Plan"):
         st.success("Plan Generated! Recommendation: Plant Acacia trees.")
+         Historical NDVI
+df_trends = get_ndvi_time_series(lat, lon)
 
-    if st.button("Analyze Farm & Generate Report"):
-        with st.spinner("Analyzing satellite trends and generating report..."):
-            try:
-                # 1. Current NDVI snapshot
-                current_ndvi = get_real_ndvi(lat, lon)
-                st.session_state.current_ndvi_value = current_ndvi
+# ✅ Check for None, empty, and missing column
+if df_trends is None or df_trends.empty or "NDVI" not in df_trends.columns:
+    st.warning("⚠️ No historical satellite data found for this location.")
+    df_trends = pd.DataFrame(columns=["date", "NDVI"])
+else:
+    # ✅ Drop NaN NDVI rows before doing anything
+    df_trends = df_trends.dropna(subset=["NDVI"])
 
-                # 2. Historical NDVI
-                df_trends = get_ndvi_time_series(lat, lon)
-                if df_trends is None:
-                    df_trends = pd.DataFrame(columns=["date", "NDVI"])
-                st.session_state.ndvi_time_series_df = df_trends
+    # ✅ After dropping NaN, check again if anything is left
+    if df_trends.empty:
+        st.warning("⚠️ Satellite data was found but all NDVI values were empty.")
 
-                # 3. Compute average NDVI and growth rate
-                if not df_trends.empty and "NDVI" in df_trends.columns:
-                    recent_data = df_trends.tail(12).copy()
-                    avg_annual_ndvi = float(recent_data["NDVI"].mean())
+st.session_state.ndvi_time_series_df = df_trends
 
-                    if len(recent_data) >= 6:
-                        split_index = len(recent_data) // 2
-                        first_half_mean = float(recent_data.iloc[:split_index]["NDVI"].mean())
-                        second_half_mean = float(recent_data.iloc[split_index:]["NDVI"].mean())
+# 3. Compute average NDVI and growth rate
+if not df_trends.empty and "NDVI" in df_trends.columns:
+    recent_data = df_trends.tail(12).copy()
 
-                        if first_half_mean > 0:
-                            growth_rate = (second_half_mean - first_half_mean) / first_half_mean
-                        else:
-                            growth_rate = 0.0
-                    else:
-                        growth_rate = 0.0
-                else:
-                    avg_annual_ndvi = float(current_ndvi)
-                    growth_rate = 0.0
+    # ✅ Drop any remaining NaN values
+    recent_data = recent_data.dropna(subset=["NDVI"])
+
+    # ✅ Only calculate if there is valid data
+    if not recent_data.empty:
+        avg_annual_ndvi = float(recent_data["NDVI"].mean())
+    else:
+        avg_annual_ndvi = float(current_ndvi) if current_ndvi else 0.0
+
+    if len(recent_data) >= 6:
+        split_index = len(recent_data) // 2
+        first_half_mean = float(recent_data.iloc[:split_index]["NDVI"].mean())
+        second_half_mean = float(recent_data.iloc[split_index:]["NDVI"].mean())
+
+        # ✅ Check both halves are valid before dividing
+        if first_half_mean > 0 and not pd.isna(first_half_mean) and not pd.isna(second_half_mean):
+            growth_rate = (second_half_mean - first_half_mean) / first_half_mean
+        else:
+            growth_rate = 0.0
+    else:
+        growth_rate = 0.0
+
+else:
+    # ✅ Safe fallback
+    avg_annual_ndvi = float(current_ndvi) if current_ndvi else 0.0
+    growth_rate = 0.0
+
+   
 
                 # 4. Carbon estimation
                 carbon_tons = area_ha * avg_annual_ndvi * CARBON_COEFFICIENT
