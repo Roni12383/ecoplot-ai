@@ -198,8 +198,7 @@ else:
     st.session_state.carbon_tons_calculated = carbon_tons
 
  # 5. Create PDF report
- st.session_state.pdf_report = create_pdf_report(
-  farm_name=farm_name,
+ st.session_state.pdf_report = create_pdf_report( farm_name=farm_name,
   area=area_ha,
   carbon_tons=carbon_tons,
   growth_rate=growth_rate,
