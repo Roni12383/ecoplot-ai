@@ -195,7 +195,7 @@ else:
 
  # 4. Carbon estimation
     carbon_tons = area_ha * avg_annual_ndvi * CARBON_COEFFICIENT
-     st.session_state.carbon_tons_calculated = carbon_tons
+ st.session_state.carbon_tons_calculated = carbon_tons
 
  # 5. Create PDF report
  st.session_state.pdf_report = create_pdf_report(
