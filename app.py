@@ -199,11 +199,7 @@ else:
 
  # 5. Create PDF report
  st.session_state.pdf_report = create_pdf_report( farm_name=farm_name,
-                                                 area=area_ha,
-                                                 carbon_tons=carbon_tons,
-                                                 growth_rate=growth_rate,
-                                                 avg_ndvi=avg_annual_ndvi,
-                                                 current_ndvi=current_ndvi )
+     area=area_ha, carbon_tons=carbon_tons, growth_rate=growth_rate, avg_ndvi=avg_annual_ndvi, current_ndvi=current_ndvi )
 
   st.success("✅ Analysis Complete! Report generated successfully.")
   st.info(
