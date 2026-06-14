@@ -142,7 +142,8 @@ with col_right:
 
     if st.button("Generate Plan"):
         st.success("Plan Generated! Recommendation: Plant Acacia trees.")
-         Historical NDVI
+        
+    #    2. Historical NDVI
 df_trends = get_ndvi_time_series(lat, lon)
 
 # ✅ Check for None, empty, and missing column
