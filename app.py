@@ -145,23 +145,16 @@ with col_right:
     if st.button("Generate Plan"):
         st.success("Plan Generated! Recommendation: Plant Acacia trees.")
 
-    #    2. Historical NDVI
-df_trends = get_ndvi_time_series(lat, lon)
-
-# ✅ Check for None, empty, and missing column
-if df_trends is None or df_trends.empty or "NDVI" not in df_trends.columns:
-    st.warning("⚠️ No historical satellite data found for this location.")
-    df_trends = pd.DataFrame(columns=["date", "NDVI"])
+st.divider()
+if st.button("Analyze Historical NDVI Trend"):
+    df = get_ndvi_time_series(lat, lon)
+    fig = px.line(df, x='date', y='NDVI', title="Vegetation Health Trend")
+    st.plotly_chart(fig)
 else:
-    # ✅ Drop NaN NDVI rows before doing anything
-    df_trends = df_trends.dropna(subset=["NDVI"])
+    st.warning("No clear satellite data found for this location in the last  2 years.")
 
-    # ✅ After dropping NaN, check again if anything is left
-    if df_trends.empty:
-        st.warning("⚠️ Satellite data was found but all NDVI values were empty.")
 
-st.session_state.ndvi_time_series_df = df_trends
-
+   
 # 3. Compute average NDVI and growth rate
 if not df_trends.empty and "NDVI" in df_trends.columns:
     recent_data = df_trends.tail(12).copy()
