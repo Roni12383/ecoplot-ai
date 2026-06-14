@@ -68,6 +68,7 @@ except Exception as e:
     st.error(f"Failed to calculate area/geometry: {e}")
     st.stop()
 
+
 # -----------------------------
 # WEATHER DATA
 # -----------------------------
@@ -89,6 +90,7 @@ def get_weather_data(lat_value, lon_value):
     except Exception as e:
         st.warning(f"Weather data unavailable: {e}")
         return 0.0, 0.0
+
 
 rain, temp = get_weather_data(lat, lon)
 
@@ -142,7 +144,7 @@ with col_right:
 
     if st.button("Generate Plan"):
         st.success("Plan Generated! Recommendation: Plant Acacia trees.")
-        
+
     #    2. Historical NDVI
 df_trends = get_ndvi_time_series(lat, lon)
 
@@ -191,33 +193,32 @@ else:
     avg_annual_ndvi = float(current_ndvi) if current_ndvi else 0.0
     growth_rate = 0.0
 
-   
-
- # 4. Carbon estimation
+    # 4. Carbon estimation
     carbon_tons = area_ha * avg_annual_ndvi * CARBON_COEFFICIENT
     st.session_state.carbon_tons_calculated = carbon_tons
 
- # 5. Create PDF report
- st.session_state.pdf_report = create_pdf_report( farm_name=farm_name,
-     area=area_ha, carbon_tons=carbon_tons, growth_rate=growth_rate, avg_ndvi=avg_annual_ndvi, current_ndvi=current_ndvi )
+    # 5. Create PDF report
+st.session_state.pdf_report = create_pdf_report(farm_name=farm_name,
+                                                area=area_ha, carbon_tons=carbon_tons, growth_rate=growth_rate,
+                                                avg_ndvi=avg_annual_ndvi, current_ndvi=current_ndvi)
 
-  st.success("✅ Analysis Complete! Report generated successfully.")
-  st.info(
-  f"Current NDVI: {current_ndvi:.3f} | "
-  f"Avg NDVI: {avg_annual_ndvi:.3f} | "
-  f"Growth Rate: {growth_rate * 100:.1f}% | "
-  f"Carbon: {carbon_tons:.2f} Tons CO2e")
+st.success("✅ Analysis Complete! Report generated successfully.")
+st.info(
+    f"Current NDVI: {current_ndvi:.3f} | "
+    f"Avg NDVI: {avg_annual_ndvi:.3f} | "
+    f"Growth Rate: {growth_rate * 100:.1f}% | "
+    f"Carbon: {carbon_tons:.2f} Tons CO2e")
 
- except Exception as e:
- st.error(f"Analysis failed: {e}")
+except Exception as e:
+st.error(f"Analysis failed: {e}")
 
-    if st.session_state.pdf_report is not None:
-        st.download_button(
-            label="📄 Download ESG Report",
-            data=st.session_state.pdf_report,
-            file_name="EcoPlot_Report.pdf",
-            mime="application/pdf"
-        )
+if st.session_state.pdf_report is not None:
+    st.download_button(
+        label="📄 Download ESG Report",
+        data=st.session_state.pdf_report,
+        file_name="EcoPlot_Report.pdf",
+        mime="application/pdf"
+    )
 
 # -----------------------------
 # NDVI TREND CHART
