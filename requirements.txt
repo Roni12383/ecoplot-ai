@@ -1,15 +1,15 @@
+streamlit
+plotly_express
+requests
+folium
+streamlit-folium
+geopandas
+shapely
+fpdf
+earthengine-api
 openai
-streamlit>=1.35.0
-pandas>=2.0.0
-numpy>=1.24.0
-requests>=2.31.0
-plotly>=5.20.0
-folium>=0.16.0
-streamlit-folium>=0.20.0
-earthengine-api>=0.1.397
-fpdf2>=2.7.9
-geopandas>=0.14.0
-shapely>=2.0.0
+pandas
+numpy
 os
 datetime
 
