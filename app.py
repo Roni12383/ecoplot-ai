@@ -1,5 +1,5 @@
 import streamlit as st
-import plotly as px
+import plotly_express as px
 import requests
 import folium
 import numpy as np
@@ -16,14 +16,6 @@ from satellite_engine import get_real_ndvi, get_ndvi_time_series
 info = json.loads(st.secrets["GCP_SERVICE_ACCOUNT"])
 credentials = ee.ServiceAccountCredentials(info['client_email'], key_data=st.secrets["GCP_SERVICE_ACCOUNT"])
 ee.Initialize(credentials, project=info[ 'project_id'])
-
-if 'carbon_tons_calculated' not in st.session_state:
-    st.session_state.carbon_tons_calculated = 0.0
-if 'current_ndvi_value' not in st.session_state:
-    st.session_state.current_ndvi_value = 0.0
-if 'pdf_report' not in st.session_state:
-    st.session_state.pdf_report = None
-
 
 st.set_page_config(page_title="EcoPlot AI", page_icon="🌱", layout="wide")
 
@@ -100,34 +92,22 @@ with col_right:
     if 'pdf_report' not in st.session_state:
         st.session_state.pdf_report = None
 
-if st.button("Generate ESG Report"):
-    st.info("Calculating NDVI and Carbon Potential, please wait...")
+    if st.button("Generate Report"):
+        # We save the result into st.session_state
+        st.session_state.pdf_report = create_pdf_report(farm_name, area, carbon_tons)
+        st.success("✅ Report is ready!")
 
-    # Calculate NDVI for the given area
-    st.session_state.current_ndvi_value = get_real_ndvi(lat, lon, area)
 
-    # Calculate carbon_tons based on the actual area and NDVI
-    st.session_state.carbon_tons_calculated = area * (st.session_state.current_ndvi_value * 10)
+    if st.session_state.pdf_report is not None:
+        st.download_button(
+            label="📄 Download ESG Report",
+            data=bytes(st.session_state.pdf_report),
+            file_name="EcoPlot_Report.pdf",
+            mime="application/pdf"
+        )
 
-    # Store PDF data in session state
-    st.session_state.pdf_report = create_pdf_report(
-        farm_name, area, st.session_state.carbon_tons_calculated
-    )
-    st.success("✅ Report Generated Successfully!")
 
-    # --- Display Results (Always visible) ---
-st.metric("Current Vegetation Health (NDVI)", f"{st.session_state.current_ndvi_value:.2f}")
-st.metric("Estimated Carbon Sequestration (Tons)", f"{st.session_state.carbon_tons_calculated:.2f}")
-
-# --- Download Button (only appears if a report has been generated) ---
-if st.session_state.pdf_report is not None:
-    st.download_button(
-        label="📄 Click here to Download PDF",
-        data=bytes(st.session_state.pdf_report),
-        file_name=f"{farm_name}_EcoPlot_Report.pdf",
-        mime="application/pdf")
-
-    # --- TRENDS ---
+# --- TRENDS ---
 st.divider()
 if st.button("Analyze Historical NDVI Trend"):
     df = get_ndvi_time_series(lat, lon)
@@ -158,3 +138,4 @@ if prompt := st.sidebar.chat_input("Ask about your farm..."):
 
     with st.sidebar.chat_message("assistant"): st.markdown(response)
     st.session_state.messages.append({"role": "assistant", "content": response})
+
