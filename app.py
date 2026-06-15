@@ -8,8 +8,7 @@ import math # Needed for calculate_buffer_radius if not in utils.py
 import os # For checking logo.png existence in PDF report
 
 # Import helper functions
-# If utils.py is in the same directory:
-from utils import calculate_buffer_radius, create_pdf_report 
+
 # If create_pdf_report is in reporting.py:
 # from reporting import create_pdf_report 
 
