@@ -133,7 +133,7 @@ with col_right:
 
 # --- TRENDS ---
 if st.button("Analyze Historical NDVI Trend"):
-    df = get_ndvi_time_series('area_ha')
+    df = get_ndvi_time_series(lat, lon)
 
     if df is not None and not df.empty:
         fig = px.line(df, x='date', y='NDVI', title="Vegetation Health Trend")
@@ -144,7 +144,7 @@ if st.button("Analyze Historical NDVI Trend"):
 # --- SIDEBAR CHATBOT & NDVI ---
 st.sidebar.divider()
 if st.sidebar.button("Fetch Live NDVI"):
-    val = get_real_ndvi('area_ha')
+    val = get_real_ndvi(lat, lon)
     st.session_state.actual_ndvi = val
     st.sidebar.write(f"Current NDVI: {val:.2f}")
 
