@@ -1,4 +1,5 @@
 import ee
+import math
 import pandas as pd
 from datetime import datetime, timedelta
 import streamlit as st
@@ -15,8 +16,14 @@ else:
     st.error("GCP_SERVICE_ACCOUNT secret not found. Check your Streamlit Secrets settings.")
 
 
-def get_real_ndvi(lat, lon):
-    point = ee.Geometry.Point([lon, lat])
+def get_real_ndvi(lat, lon, area_ha):
+    # 1. Convert hectares to radius
+    area_sqm = area_ha * 10000
+    radius = math.sqrt(area_sqm / 3.14159)
+
+    # 2. Use that dynamic radius instead of "50"
+    point = ee.Geometry.Point([lon, lat]).buffer(radius)
+
     image = (ee.ImageCollection("COPERNICUS/S2_SR_HARMONIZED")
              .filterBounds(point)
              .filter(ee.Filter.lt('CLOUDY_PIXEL_PERCENTAGE', 20))
@@ -26,7 +33,14 @@ def get_real_ndvi(lat, lon):
     if not image: return 0.0
 
     ndvi_image = image.normalizedDifference(['B8', 'B4']).rename('NDVI')
-    stats = ndvi_image.reduceRegion(reducer=ee.Reducer.mean(), geometry=point, scale=10)
+
+    # 3. This now calculates the average of the WHOLE 8 hectares!
+    stats = ndvi_image.reduceRegion(
+        reducer=ee.Reducer.mean(),
+        geometry=point,
+        scale=10,
+        maxPixels=1e9  # Important for large areas
+    )
     return stats.get('NDVI').getInfo() or 0.0
 
 
@@ -71,4 +85,4 @@ def get_ndvi_time_series(lat, lon):
 
     df = pd.DataFrame(features)
     # Drop duplicates so we only have one value per month
-    df = df.drop_duplicates(subset='date')
+    return df.drop_duplicates('date').sort_values('date')
