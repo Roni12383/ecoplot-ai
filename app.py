@@ -111,7 +111,7 @@ with col_right:
 st.divider()
 if st.button("Analyze Historical NDVI Trend"):
     df = get_ndvi_time_series(lat, lon)
-    fig = plotly.line(df, x='date', y='NDVI', title="Vegetation Health Trend")
+    fig = px.line(df, x='date', y='NDVI', title="Vegetation Health Trend")
     st.plotly_chart(fig,use_container_width=True)
 else:
     st.warning("No clear satellite data found for this location in the last  2 years.")
