@@ -1,194 +1,160 @@
 import streamlit as st
+import plotly_express as px
+import requests
+import folium
+import numpy as np
 import ee
-import pandas as pd
 import json
-from datetime import datetime, timedelta
-import plotly.express as px
-import math # Needed for calculate_buffer_radius if not in utils.py
-import os # For checking logo.png existence in PDF report
+from streamlit_folium import st_folium
 
-# Import helper functions
+# Imports from custom project files
+from logic import calculate_metrics
+from reporting import create_pdf_report
+from chatbot import get_ai_response
+from satellite_engine import get_real_ndvi, get_ndvi_time_series
 
-# If create_pdf_report is in reporting.py:
-# from reporting import create_pdf_report 
+info = json.loads(st.secrets["GCP_SERVICE_ACCOUNT"])
+credentials = ee.ServiceAccountCredentials(info['client_email'], key_data=st.secrets["GCP_SERVICE_ACCOUNT"])
+ee.Initialize(credentials, project=info[ 'project_id'])
 
-
-# --- Streamlit Page Configuration ---
-st.set_page_config(page_title="EcoPlot AI", page_icon="🌱", layout="wide")
-
-# --- Google Earth Engine Initialization ---
-# This block handles authentication for both local (earthengine authenticate) and cloud (secrets)
-try:
-    if "GCP_SERVICE_ACCOUNT" in st.secrets:
-        info = json.loads(st.secrets["GCP_SERVICE_ACCOUNT"])
-        credentials = ee.ServiceAccountCredentials(info['client_email'], key_data=st.secrets["GCP_SERVICE_ACCOUNT"])
-        ee.Initialize(credentials, project=info['project_id'])
-    else:
-        # Fallback for local development if secrets are not set, requires 'earthengine authenticate'
-        ee.Initialize() 
-except Exception as e:
-    st.error(f"Failed to initialize Earth Engine. Ensure 'earthengine authenticate' is run locally or 'GCP_SERVICE_ACCOUNT' is set in Streamlit Secrets: {e}")
-    st.stop() # Stop the app if GEE can't initialize
-
-# --- Session State Initialization ---
-# This ensures variables persist across Streamlit reruns
-if 'current_ndvi_value' not in st.session_state:
-    st.session_state.current_ndvi_value = 0.0
 if 'carbon_tons_calculated' not in st.session_state:
     st.session_state.carbon_tons_calculated = 0.0
+if 'current_ndvi_value' not in st.session_state:
+    st.session_state.current_ndvi_value = 0.0
 if 'pdf_report' not in st.session_state:
     st.session_state.pdf_report = None
-if 'ndvi_time_series_df' not in st.session_state:
-    st.session_state.ndvi_time_series_df = pd.DataFrame(columns=['date', 'NDVI'])
 
 
-# --- Earth Engine Data Retrieval Functions ---
+st.set_page_config(page_title="EcoPlot AI", page_icon="🌱", layout="wide")
 
-def get_real_ndvi(lat, lon, area_ha):
-    """
-    Fetches the current NDVI value for a dynamically sized circular area.
-    """
-    # Calculate radius based on hectares
-    radius = calculate_buffer_radius(area_ha)
-    if radius == 0: return 0.0
+st.set_page_config(page_title="EcoPlot AI", layout="wide")
 
-    point_geom = ee.Geometry.Point([lon, lat]).buffer(radius)
-    
-    image = (ee.ImageCollection("COPERNICUS/S2_SR_HARMONIZED")
-             .filterBounds(point_geom)
-             .filter(ee.Filter.lt('CLOUDY_PIXEL_PERCENTAGE', 50)) # Relaxed cloud filter
-             .sort('system:time_start', False)
-             .first())
+if "actual_ndvi" not in st.session_state:
+    st.session_state.actual_ndvi = 0.0
 
-    if not image: return 0.0
+st.title("🌱 EcoPlot AI: Landscape Restoration Planner")
 
-    ndvi_image = image.normalizedDifference(['B8', 'B4']).rename('NDVI')
-    stats = ndvi_image.reduceRegion(
-        reducer=ee.Reducer.mean(), 
-        geometry=point_geom, 
-        scale=10, # Sentinel-2 resolution
-        maxPixels=1e9 # Important for larger areas
+# --- SIDEBAR ---
+st.sidebar.header("Farm Input Data")
+lat = st.sidebar.number_input("Latitude", value=12.0022, format="%.4f")
+lon = st.sidebar.number_input("Longitude", value=8.5920, format="%.4f")
+soil_carbon = st.sidebar.slider("Current Soil Carbon (%)", 0.1, 5.0, 1.2)
+
+area, gdf = calculate_metrics(lat, lon)
+
+
+# --- WEATHER DATA ---
+def get_weather_data(lat, lon):
+    try:
+        url = f"https://api.open-meteo.com/v1/forecast?latitude={lat}&longitude={lon}&daily=precipitation_sum,temperature_2m_max&timezone=auto"
+        res = requests.get(url).json()
+        return sum(res['daily']['precipitation_sum'][:7]), res['daily']['temperature_2m_max'][0]
+    except:
+        return 0, 0
+
+
+rain, temp = get_weather_data(lat, lon)
+
+# --- HEADER METRICS ---
+c1, c2, c3 = st.columns(3)
+c1.metric("Area", f"{area:.2f} Ha")
+c2.metric("Rainfall (7d)", f"{rain} mm")
+c3.metric("Temp", f"{temp} °C")
+
+# --- MAP & SUSTAINABILITY ---
+col_left, col_right = st.columns([2, 1])
+
+with col_left:
+    map_type = st.radio("View:", ["Street", "Satellite", "NDVI Heatmap"], horizontal=True)
+    m = folium.Map(location=[lat, lon], zoom_start=17)
+
+    if map_type != "Street":
+        esri = "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
+        folium.TileLayer(tiles=esri, attr="Esri").add_to(m)
+
+    color = "#228B22" if map_type == "NDVI Heatmap" else "#3388ff"
+    folium.GeoJson(gdf, style_function=lambda x: {'fillColor': color, 'color': 'white'}).add_to(m)
+    st_folium(m, width=800, height=450)
+
+with col_right:
+    st.subheader("Sustainability")
+    potential = (5.0 - soil_carbon) * area * 25
+    st.write(f"**Carbon Potential:** {potential:.1f} Tons CO2e")
+
+    if st.button("Generate Plan"):
+        st.success("Plan Generated! Recommendation: Plant Acacia trees.")
+
+    farm_name = st.text_input("Farm Name", "EcoPlot Project")
+    # User inputs the area
+    farm_area = st.number_input("Enter Farm Area (Hectares):", value=1.0)
+
+    # Pass that area into the function
+    if st.button("Analyze Farm"):
+        current_ndvi = get_real_ndvi(lat, lon, farm_area)  # <--- dynamic area passed here
+
+        # Now, this potential is scientifically honest!
+        carbon_potential = farm_area * (current_ndvi * 5.5)
+
+        st.write(f"The average NDVI for your {farm_area} hectare farm is {current_ndvi:.2f}")
+
+    if 'pdf_report' not in st.session_state:
+        st.session_state.pdf_report = None
+
+if st.button("Generate ESG Report"):
+    st.info("Calculating NDVI and Carbon Potential, please wait...")
+
+    # Calculate NDVI for the given area
+    st.session_state.current_ndvi_value = get_real_ndvi(lat, lon, area)
+
+    # Calculate carbon_tons based on the actual area and NDVI
+    st.session_state.carbon_tons_calculated = area * (st.session_state.current_ndvi_value * 10)
+
+    # Store PDF data in session state
+    st.session_state.pdf_report = create_pdf_report(
+        farm_name, area, st.session_state.carbon_tons_calculated
     )
-    return stats.get('NDVI').getInfo() or 0.0
+    st.success("✅ Report Generated Successfully!")
 
+    # --- Display Results (Always visible) ---
+st.metric("Current Vegetation Health (NDVI)", f"{st.session_state.current_ndvi_value:.2f}")
+st.metric("Estimated Carbon Sequestration (Tons)", f"{st.session_state.carbon_tons_calculated:.2f}")
 
-def get_ndvi_time_series(lat, lon, area_ha):
-    """
-    Fetches NDVI time series data for a dynamically sized circular area.
-    """
-    # Calculate radius based on hectares
-    radius = calculate_buffer_radius(area_ha)
-    if radius == 0: return pd.DataFrame(columns=['date', 'NDVI'])
-
-    point_geom = ee.Geometry.Point([lon, lat]).buffer(radius)
-    
-    start_date = (datetime.now() - timedelta(days=730)).strftime('%Y-%m-%d')
-    end_date = datetime.now().strftime('%Y-%m-%d')
-
-    collection = (ee.ImageCollection("COPERNICUS/S2_SR_HARMONIZED")
-                  .filterBounds(point_geom)
-                  .filterDate(start_date, end_date)
-                  .filter(ee.Filter.lt('CLOUDY_PIXEL_PERCENTAGE', 50))) # Relaxed cloud filter
-
-    def extract_data(img):
-        ndvi_band = img.normalizedDifference(['B8', 'B4']).rename('NDVI')
-        stats = ndvi_band.reduceRegion(
-            reducer=ee.Reducer.mean(), 
-            geometry=point_geom, 
-            scale=10,
-            maxPixels=1e9
-        )
-        return ee.Feature(None, {'date': img.date().format('YYYY-MM-01'), 'NDVI': stats.get('NDVI')})
-
-    # Execute and get data
-    data = collection.map(extract_data).getInfo()
-    
-    features = []
-    for f in data['features']:
-        props = f['properties']
-        # Robustly check if 'NDVI' exists and is not None
-        if props.get('NDVI') is not None:
-            features.append(props)
-    
-    if not features:
-        return pd.DataFrame(columns=['date', 'NDVI'])
-        
-    df = pd.DataFrame(features)
-    # Ensure 'date' is datetime for sorting and plotting
-    df['date'] = pd.to_datetime(df['date']) 
-    return df.drop_duplicates(subset='date').sort_values('date') # Use subset for clarity
-
-
-# --- Streamlit UI ---
-
-st.title("🌱 EcoPlot AI Dashboard")
-
-with st.sidebar:
-    st.header("Farm Location & Size")
-    farm_name = st.text_input("Enter Farm Name:", "My EcoPlot Farm")
-    area_ha = st.number_input("Farm Area (Hectares):", min_value=0.1, value=1.0, format="%.1f")
-    lat = st.number_input("Latitude", value=9.0820, format="%.4f") # Abuja example
-    lon = st.number_input("Longitude", value=8.6753, format="%.4f") # Abuja example
-
-    # Main action button
-    if st.button("Analyze Farm & Generate Report"):
-        st.session_state.current_ndvi_value = 0.0 # Reset for new calculation
-        st.session_state.carbon_tons_calculated = 0.0 # Reset
-        st.session_state.pdf_report = None # Reset PDF
-
-        with st.spinner("Fetching satellite data and calculating..."):
-            # Get current NDVI for the *entire* specified area
-            st.session_state.current_ndvi_value = get_real_ndvi(lat, lon, area_ha)
-            
-            # Estimate carbon sequestration (adjust formula as needed for relevance)
-            # This calculation now uses the actual area and average NDVI for that area
-            if st.session_state.current_ndvi_value > 0:
-                # Example: Assume a certain carbon capture per hectare per NDVI unit
-                # This is a simplified model, adapt with real scientific coeffs if available
-                st.session_state.carbon_tons_calculated = area_ha * st.session_state.current_ndvi_value * 50 # Example multiplier
-            else:
-                st.session_state.carbon_tons_calculated = 0.0
-
-            # Generate PDF report
-            st.session_state.pdf_report = create_pdf_report(
-                farm_name, area_ha, st.session_state.carbon_tons_calculated
-            )
-            
-            # Fetch NDVI time series for the *entire* specified area
-            st.session_state.ndvi_time_series_df = get_ndvi_time_series(lat, lon, area_ha)
-
-        st.success("✅ Analysis Complete! Results below.")
-
-
-# --- Display Metrics ---
-st.header("Current Farm Health Overview")
-col1, col2 = st.columns(2)
-with col1:
-    st.metric("Vegetation Health (Current NDVI)", f"{st.session_state.current_ndvi_value:.2f}")
-with col2:
-    st.metric("Estimated Carbon Sequestration (Tons CO2eq)", f"{st.session_state.carbon_tons_calculated:.2f}")
-
-
-# --- Display Historical NDVI Trend ---
-st.header("Historical Vegetation Health Trend")
-if not st.session_state.ndvi_time_series_df.empty:
-    fig = px.line(
-        st.session_state.ndvi_time_series_df, 
-        x='date', 
-        y='NDVI', 
-        title=f"NDVI Trend for {farm_name} ({area_ha:.1f} Ha)",
-        labels={'date': 'Date', 'NDVI': 'Average NDVI'}
-    )
-    st.plotly_chart(fig, use_container_width=True)
-else:
-    st.warning(f"⚠️ No sufficient clear satellite data found for {farm_name} ({area_ha:.1f} Ha) in the last 2 years with current cloud filtering.")
-
-
-# --- Download Report Button ---
+# --- Download Button (only appears if a report has been generated) ---
 if st.session_state.pdf_report is not None:
     st.download_button(
-        label="📄 Download ESG Report",
+        label="📄 Click here to Download PDF",
         data=bytes(st.session_state.pdf_report),
         file_name=f"{farm_name}_EcoPlot_Report.pdf",
-        mime="application/pdf"
-    )
+        mime="application/pdf")
+
+    # --- TRENDS ---
+st.divider()
+if st.button("Analyze Historical NDVI Trend"):
+    df = get_ndvi_time_series(lat, lon)
+    fig = px.line(df, x='date', y='NDVI', title="Vegetation Health Trend")
+    st.plotly_chart(fig,use_container_width=True)
+else:
+    st.warning("No clear satellite data found for this location in the last  2 years.")
+
+# --- SIDEBAR CHATBOT & NDVI ---
+st.sidebar.divider()
+if st.sidebar.button("Fetch Live NDVI"):
+    val = get_real_ndvi(lat, lon)
+    st.session_state.actual_ndvi = val
+    st.sidebar.write(f"Current NDVI: {val:.2f}")
+
+st.sidebar.subheader("🤖 EcoPlot AI Advisor")
+if "messages" not in st.session_state: st.session_state.messages = []
+
+for msg in st.session_state.messages:
+    with st.sidebar.chat_message(msg["role"]): st.markdown(msg["content"])
+
+if prompt := st.sidebar.chat_input("Ask about your farm..."):
+    st.session_state.messages.append({"role": "user", "content": prompt})
+    with st.sidebar.chat_message("user"): st.markdown(prompt)
+
+    metrics = {'lat': lat, 'lon': lon, 'area': area, 'rain': rain, 'ndvi': st.session_state.actual_ndvi}
+    response = get_ai_response(prompt, metrics)
+
+    with st.sidebar.chat_message("assistant"): st.markdown(response)
+    st.session_state.messages.append({"role": "assistant", "content": response})
