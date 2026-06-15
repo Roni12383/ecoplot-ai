@@ -1,5 +1,5 @@
 import streamlit as st
-import plotly as px
+import plotly.express as px
 import requests
 import folium
 import numpy as np
@@ -133,14 +133,14 @@ with col_right:
 
 # --- TRENDS ---
 if st.button("Analyze Historical NDVI Trend"):
-    df = get_ndvi_time_series(lat, lon)
+    with st.spinner("Loading historical trends..."): # Good practice for data fetching
+        df = get_ndvi_time_series(lat, lon)
 
-    if df is not None and not df.empty:
-        fig = px.line(df, x='date', y='NDVI', title="Vegetation Health Trend")
-        st.plotly_chart(fig)
-    else:
-        st.warning("No clear satellite data found for this location in the last 2 years.")
-
+        if df is not None and not df.empty:
+            fig = px.line(df, x='date', y='NDVI', title="Vegetation Health Trend")
+            st.plotly_chart(fig, use_container_width=True) # Makes chart look better on mobile/web
+        else:
+            st.warning("No clear satellite data found for this location in the last 2 years.")
 # --- SIDEBAR CHATBOT & NDVI ---
 st.sidebar.divider()
 if st.sidebar.button("Fetch Live NDVI"):
