@@ -10,5 +10,7 @@ earthengine-api>=0.1.397
 fpdf2>=2.7.9
 geopandas>=0.14.0
 shapely>=2.0.0
+os
+datetime
 
 
