@@ -1,5 +1,5 @@
 import streamlit as st
-import plotly as px
+import plotly_express as px
 import requests
 import folium
 import numpy as np
