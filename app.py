@@ -12,7 +12,7 @@ from streamlit_folium import st_folium
 from logic import calculate_metrics
 from reporting import create_pdf_report
 from chatbot import get_ai_response
-from satellite_engine import get_real_ndvi, get_ndvi_time_series
+from satellite_engine import get_real_ndvi(lat, lon), get_ndvi_time_series(lat, lon)
 CARBON_COEFFICIENT = 35.0
 
 if "current_ndvi_value" not in st.session_state:
