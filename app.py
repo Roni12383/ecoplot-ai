@@ -101,19 +101,19 @@ with col_right:
     if st.button("Analyze Farm & Generate Report"):
         with st.spinner("Fetching satellite data and calculating..."):
             # 1. Fetch live NDVI (this changes with coordinates!)
-            st.session_state.current_ndvi_value = get_real_ndvi(lat, lon, area_ha)
+            st.session_state.current_ndvi_value = get_real_ndvi(lat, lon, area)
 
             # 2. Calculate Dynamic Carbon (this now changes with coordinates AND hectares!)
             # If NDVI is 0.2 (dry/bare soil), carbon is low.
             # If NDVI is 0.8 (dense forest), carbon is very high!
             carbon_coefficient = 35.0
-            st.session_state.carbon_tons_calculated = area_ha * (
+            st.session_state.carbon_tons_calculated = area * (
                         st.session_state.current_ndvi_value * carbon_coefficient)
 
             # 3. Generate the PDF with the dynamic carbon value
             st.session_state.pdf_report = create_pdf_report(
                 farm_name,
-                area_ha,
+                area,
                 st.session_state.carbon_tons_calculated  # Passing the dynamic value
             )
 
