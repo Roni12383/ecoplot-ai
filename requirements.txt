@@ -1,5 +1,5 @@
 streamlit
-plotly
+plotly_express
 requests
 folium
 streamlit-folium
