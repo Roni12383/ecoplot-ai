@@ -13,7 +13,7 @@ from logic import calculate_metrics
 from reporting import create_pdf_report
 from chatbot import get_ai_response
 from satellite_engine import get_real_ndvi, get_ndvi_time_series
-CARBON_COEFFICIENT = 35.0
+carbon_coefficient = 35.0
 
 if "current_ndvi_value" not in st.session_state:
     st.session_state.current_ndvi_value = 0.0
