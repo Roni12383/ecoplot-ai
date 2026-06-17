@@ -1,10 +1,9 @@
 import streamlit as st
-import plotly.express as px
+import plotly_express as px
 import requests
 import folium
 import numpy as np
 import ee
-import pandas as pd
 import json
 from streamlit_folium import st_folium
 
@@ -13,7 +12,6 @@ from logic import calculate_metrics
 from reporting import create_pdf_report
 from chatbot import get_ai_response
 from satellite_engine import get_real_ndvi, get_ndvi_time_series
-CARBON_COEFFICIENT = 35.0
 
 if "current_ndvi_value" not in st.session_state:
     st.session_state.current_ndvi_value = 0.0
@@ -94,32 +92,32 @@ with col_right:
 
     farm_name = st.text_input("Farm Name", "EcoPlot Project")
     area = st.number_input("Hectares", value=10.0)
-    carbon_tons = area * (st.session_state.current_ndvi_value * CARBON_COEFFICIENT )
+    carbon_tons = area_ha * (st.session_state.current_ndvi_value * carbon_coefficient)
 
     if 'pdf_report' not in st.session_state:
         st.session_state.pdf_report = None
 
     if st.button("Analyze Farm & Generate Report"):
-        with st.spinner("Analyzing..."):
+        with st.spinner("Fetching satellite data and calculating..."):
             # 1. Fetch live NDVI (this changes with coordinates!)
-            st.session_state.current_ndvi_value = get_real_ndvi(lat, lon)
+            st.session_state.current_ndvi_value = get_real_ndvi(lat, lon, area_ha)
 
             # 2. Calculate Dynamic Carbon (this now changes with coordinates AND hectares!)
             # If NDVI is 0.2 (dry/bare soil), carbon is low.
             # If NDVI is 0.8 (dense forest), carbon is very high!
-
-            st.session_state.carbon_tons_calculated = area * (
-                        st.session_state.current_ndvi_value * CARBON_COEFFICIENT)
+            carbon_coefficient = 35.0
+            st.session_state.carbon_tons_calculated = area_ha * (
+                        st.session_state.current_ndvi_value * carbon_coefficient)
 
             # 3. Generate the PDF with the dynamic carbon value
             st.session_state.pdf_report = create_pdf_report(
                 farm_name,
-                area,
+                area_ha,
                 st.session_state.carbon_tons_calculated  # Passing the dynamic value
             )
 
             # 4. Fetch the time series
-            st.session_state.ndvi_time_series_df = get_ndvi_time_series(lat, lon, area)
+            st.session_state.ndvi_time_series_df = get_ndvi_time_series(lat, lon, area_ha)
 
         st.success("✅ Analysis Complete!")
 
@@ -132,19 +130,18 @@ with col_right:
         )
 
 # --- TRENDS ---
+st.divider()
 if st.button("Analyze Historical NDVI Trend"):
-    with st.spinner("Loading historical trends..."): # Good practice for data fetching
-        df = get_ndvi_time_series(lat, lon, area)
+    df = get_ndvi_time_series(lat, lon)
+    fig = px.line(df, x='date', y='NDVI', title="Vegetation Health Trend")
+    st.plotly_chart(fig)
+else:
+    st.warning("No clear satellite data found for this location in the last  2 years.")
 
-        if df is not None and not df.empty:
-            fig = px.line(df, x='date', y='NDVI', title="Vegetation Health Trend")
-            st.plotly_chart(fig, use_container_width=True) # Makes chart look better on mobile/web
-        else:
-            st.warning("No clear satellite data found for this location in the last 2 years.")
 # --- SIDEBAR CHATBOT & NDVI ---
 st.sidebar.divider()
 if st.sidebar.button("Fetch Live NDVI"):
-    val = get_real_ndvi(lat, lon, area)
+    val = get_real_ndvi(lat, lon)
     st.session_state.actual_ndvi = val
     st.sidebar.write(f"Current NDVI: {val:.2f}")
 
@@ -163,3 +160,4 @@ if prompt := st.sidebar.chat_input("Ask about your farm..."):
 
     with st.sidebar.chat_message("assistant"): st.markdown(response)
     st.session_state.messages.append({"role": "assistant", "content": response})
+
