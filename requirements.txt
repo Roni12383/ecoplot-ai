@@ -5,7 +5,7 @@ folium
 streamlit-folium
 geopandas
 shapely
-fpdf
+fpdf2
 earthengine-api
 openai
 pandas
