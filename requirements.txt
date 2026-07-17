@@ -11,4 +11,4 @@ openai
 pandas
 numpy
 datetime
-streamlit-components-v1
+streamlit_components_v1
