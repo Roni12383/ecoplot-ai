@@ -11,6 +11,3 @@ openai
 pandas
 numpy
 datetime
-streamlit-components-v1
-rasterio
-pyogrio
