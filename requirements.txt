@@ -12,3 +12,5 @@ pandas
 numpy
 datetime
 streamlit_components_v1
+rasterio
+pyogrio
