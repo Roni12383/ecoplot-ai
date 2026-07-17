@@ -11,6 +11,6 @@ openai
 pandas
 numpy
 datetime
-streamlit_components_v1
+streamlit-components-v1
 rasterio
 pyogrio
