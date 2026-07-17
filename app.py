@@ -6,6 +6,7 @@ import numpy as np
 import ee
 import pandas as pd
 import json
+import streamlit.components.v1 as components
 from streamlit_folium import st_folium
 
 # Imports from custom project files
@@ -163,4 +164,35 @@ if prompt := st.sidebar.chat_input("Ask about your farm..."):
 
     with st.sidebar.chat_message("assistant"): st.markdown(response)
     st.session_state.messages.append({"role": "assistant", "content": response})
+
+
+components.html("""<script>
+  window.__EMBED_CONFIG__ = {
+    publicToken: "5IIU5LFr9c445a6j7vSc7t78MD1GecRJYa3KISFLRiSZfFQFkG5xvGIGVZIXX1UK",
+    // baseUrl: "https://xeelaa.com",
+    getUserToken: function() {
+      return document.querySelector("meta[name=user-token]")?.content || null;
+    },
+    getUserId: function() {
+      return document.querySelector("meta[name=user-id]")?.content || null;
+    },
+    getUserName: function() {
+      return document.querySelector("meta[name=user-name]")?.content || null;
+    },
+    getUserEmail: function() {
+      return document.querySelector("meta[name=user-email]")?.content || null;
+    },
+    getUserRole: function() {
+      return document.querySelector("meta[name=user-role]")?.content || null;
+    }
+  };
+</script>
+<script src="https://xeelaa.com/widget.js?key=5IIU5LFr9c445a6j7vSc7t78MD1GecRJYa3KISFLRiSZfFQFkG5xvGIGVZIXX1UK"></script>
+""", height=0, width=0)
+
+
+
+
+
+
 
