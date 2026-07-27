@@ -14,6 +14,34 @@ from logic import calculate_metrics
 from reporting import create_pdf_report
 from chatbot import get_ai_response
 from satellite_engine import get_real_ndvi, get_ndvi_time_series
+# 1. GET KEY FROM STREAMLIT SECRETS
+api_key = st.secrets["XEELAA_API_KEY"]
+
+# 2. EXAMPLE: CALL XEELAA CHATBOT API
+def ask_xeelaa(user_message, language="Hausa"):
+    url = "https://api.xeelaa.ai/v1/chat" # replace with your real Xeelaa endpoint
+    headers = {
+        "Authorization": f"Bearer {api_key}",
+        "Content-Type": "application/json"
+    }
+    payload = {
+        "message": user_message,
+        "language": language,
+        "assistant_name": "Xeelaa - Jigawa Farm Assistant"
+    }
+    
+    response = requests.post(url, json=payload, headers=headers)
+    return response.json()["reply"]
+
+# 3. USE IT IN STREAMLIT
+st.title("Xeelaa - EcoPlotAI Assistant")
+user_input = st.text_input("Ask Xeelaa something in Hausa or English")
+
+if user_input:
+    with st.spinner("Xeelaa is thinking..."):
+        answer = ask_xeelaa(user_input)
+        st.write(answer)
+
 CARBON_COEFFICIENT = 35.0
 
 if "current_ndvi_value" not in st.session_state:
