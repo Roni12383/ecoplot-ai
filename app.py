@@ -14,6 +14,10 @@ from logic import calculate_metrics
 from reporting import create_pdf_report
 from chatbot import get_ai_response
 from satellite_engine import get_real_ndvi, get_ndvi_time_series
+
+url = "https://api.xeelaa.ai"
+st.write("Testing:". url)
+
 # 1. GET KEY FROM STREAMLIT SECRETS
 api_key = st.secrets["XEELAA_API_KEY"]
 
