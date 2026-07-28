@@ -197,7 +197,7 @@ if prompt := st.sidebar.chat_input("Ask about your farm..."):
 
 components.html("""<script>
   window.__EMBED_CONFIG__ = {
-    publicToken: "5IIU5LFr9c445a6j7vSc7t78MD1GecRJYa3KISFLRiSZfFQFkG5xvGIGVZIXX1UK",
+    publicToken: "v2ko4P8ZYDlpXicM7WP3vHijQmjSznVa28wpMRwRS7WPH7lfwUJh22pHzGUy82tZ",
     // baseUrl: "https://xeelaa.com",
     getUserToken: function() {
       return document.querySelector("meta[name=user-token]")?.content || null;
@@ -216,7 +216,7 @@ components.html("""<script>
     }
   };
 </script>
-<script src="https://xeelaa.com/widget.js?key=5IIU5LFr9c445a6j7vSc7t78MD1GecRJYa3KISFLRiSZfFQFkG5xvGIGVZIXX1UK"></script>
+<script src="https://xeelaa.com/widget.js?key=v2ko4P8ZYDlpXicM7WP3vHijQmjSznVa28wpMRwRS7WPH7lfwUJh22pHzGUy82tZ"></script>
 """, height=0, width=0)
 
 
