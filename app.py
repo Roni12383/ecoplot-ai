@@ -20,7 +20,7 @@ st.markdown("""
 <style>
     /* 1. MAIN APP TEXT - EcoPlotAI headers, labels, metrics */
     html, body, [class*="st-"] {
-        font-size: 16px !important;  /* Change this: 14=small, 16=normal, 18=big */
+        font-size: 18px !important;  /* Change this: 14=small, 16=normal, 18=big */
     }
     
     /* 2. HEADERS */
@@ -30,7 +30,7 @@ st.markdown("""
     
     /* 3. XEELAA ASSISTANT CHAT BUBBLES */
     .stChatMessage { font-size: 16px !important; } /* User + AI messages */
-    .stChatMessage p { font-size: 16px !important; line-height: 1.6 !important; }
+    .stChatMessage p { font-size: 14px !important; line-height: 1.6 !important; }
     
     /* 4. INPUT BOX + BUTTONS */
     .stTextInput input { font-size: 16px !important; }
