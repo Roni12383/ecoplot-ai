@@ -29,7 +29,7 @@ st.markdown("""
     h3 { font-size: 1.4rem !important; }  /* Sub headers */
     
     /* 3. XEELAA ASSISTANT CHAT BUBBLES */
-    .stChatMessage { font-size: 16px !important; } /* User + AI messages */
+    .stChatMessage { font-size: 14px !important; } /* User + AI messages */
     .stChatMessage p { font-size: 14px !important; line-height: 1.6 !important; }
     
     /* 4. INPUT BOX + BUTTONS */
