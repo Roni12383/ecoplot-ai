@@ -15,36 +15,12 @@ from reporting import create_pdf_report
 from chatbot import get_ai_response
 from satellite_engine import get_real_ndvi, get_ndvi_time_series
 
-# FORCE FONT SIZE FOR ENTIRE APP + CHAT
-st.markdown("""
-<style>
-    /* 1. MAIN APP TEXT - EcoPlotAI headers, labels, metrics */
-    html, body, [class*="st-"] {
-        font-size: 18px !important;  /* Change this: 14=small, 16=normal, 18=big */
-    }
-    
-    /* 2. HEADERS */
-    h1 { font-size: 2.2rem !important; }  /* Main Title */
-    h2 { font-size: 1.8rem !important; }  /* Section headers */
-    h3 { font-size: 1.4rem !important; }  /* Sub headers */
-    
-    /* 3. XEELAA ASSISTANT CHAT BUBBLES */
-    .stChatMessage { font-size: 14px !important; } /* User + AI messages */
-    .stChatMessage p { font-size: 14px !important; line-height: 1.6 !important; }
-    
-    /* 4. INPUT BOX + BUTTONS */
-    .stTextInput input { font-size: 16px !important; }
-    .stButton button { font-size: 16px !important; font-weight: 600 !important; }
-    
-    /* 5. SIDEBAR */
-    [data-testid="stSidebar"] { font-size: 15px !important; }
-    
-    /* 6. METRICS - like Rainfall, NDVI */
-    [data-testid="stMetricValue"] { font-size: 28px !important; }
-    [data-testid="stMetricLabel"] { font-size: 14px !important; }
-</style>
-""", unsafe_allow_html=True)
 
+def big_text(text, size="17px"):
+    st.markdown(f'<p style="font-size:{size}; line-height:1.7;">{text}</p>', unsafe_allow_html=True)
+
+def big_title(text, size="32px"):
+    st.markdown(f'<h1 style="font-size:{size}; font-weight:600;">{text}</h1>', unsafe_allow_html=True)
 
 # 1. GET KEY FROM STREAMLIT SECRETS
 api_key = st.secrets["XEELAA_API_KEY"]
@@ -101,7 +77,7 @@ st.set_page_config(page_title="EcoPlot AI", layout="wide")
 if "actual_ndvi" not in st.session_state:
     st.session_state.actual_ndvi = 0.0
 
-st.title("🌱 EcoPlot AI: Landscape Restoration Planner")
+big_title("🌱 EcoPlot AI: Landscape Restoration Planner", "36px")
 
 # --- SIDEBAR ---
 st.sidebar.header("Farm Input Data")
