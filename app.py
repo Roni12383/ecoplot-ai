@@ -14,10 +14,10 @@ from logic import calculate_metrics
 from reporting import create_pdf_report
 from chatbot import get_ai_response
 from satellite_engine import get_real_ndvi, get_ndvi_time_series
-# CUSTOM CSS FOR FONT + DIVIDER
+
 st.markdown("""
 <style>
-    /* 1. ECOPLOTAI BRAND - BIGGEST */
+    /* 1. MAKE ECOPLOTAI THE BIGGEST - BRAND */
     h1 {
         font-size: 34px !important; 
         font-weight: 800 !important;
@@ -25,41 +25,36 @@ st.markdown("""
         margin-bottom: 5px !important;
     }
     
-    /* 2. XEELAA SUBTITLE - SMALLER */
-    .subtitle {
+    /* 2. MAKE XEELAA SUBTITLE SMALLER */
+    .st-emotion-cache-10trblm { /* Streamlit subtitle class */
         font-size: 18px !important;
         color: #555 !important;
-        margin-bottom: 20px !important;
     }
     
-    /* 3. SECTION TITLE */
+    /* 3. SECTION TITLE "EcoPlot AI: Landscape..." */
     h2, h3 {
         font-size: 22px !important;
         font-weight: 700 !important;
-        color: #2E7D32 !important;
     }
     
-    /* 4. DATA LABELS */
-    label {
+    /* 4. DATA LABELS like Area, Rainfall */
+    label, .stMarkdown p {
         font-size: 15px !important;
         color: #666 !important;
     }
     
-    /* 5. BIG NUMBERS */
+    /* 5. BIG NUMBERS like 1.00 Ha */
     .stMetricValue {
         font-size: 26px !important;
         font-weight: 700 !important;
     }
     
-    /* 6. GREEN DIVIDER */
-    .divider {
-        border-top: 3px solid #2E7D32;
-        margin: 25px 0;
-        border-radius: 2px;
+    /* 6. FIX THE LONG DECIMAL */
+    .stMetricValue {
+        font-variant-numeric: tabular-nums;
     }
 </style>
 """, unsafe_allow_html=True)
-
 
 # 1. GET KEY FROM STREAMLIT SECRETS
 api_key = st.secrets["XEELAA_API_KEY"]
