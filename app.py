@@ -15,46 +15,36 @@ from reporting import create_pdf_report
 from chatbot import get_ai_response
 from satellite_engine import get_real_ndvi, get_ndvi_time_series
 
+# FORCE FONT SIZE FOR ENTIRE APP + CHAT
 st.markdown("""
 <style>
-    /* 1. MAKE ECOPLOTAI THE BIGGEST - BRAND */
-    h1 {
-        font-size: 34px !important; 
-        font-weight: 800 !important;
-        color: #2E7D32 !important; /* Farm Green */
-        margin-bottom: 5px !important;
+    /* 1. MAIN APP TEXT - EcoPlotAI headers, labels, metrics */
+    html, body, [class*="st-"] {
+        font-size: 16px !important;  /* Change this: 14=small, 16=normal, 18=big */
     }
     
-    /* 2. MAKE XEELAA SUBTITLE SMALLER */
-    .st-emotion-cache-10trblm { /* Streamlit subtitle class */
-        font-size: 18px !important;
-        color: #555 !important;
-    }
+    /* 2. HEADERS */
+    h1 { font-size: 2.2rem !important; }  /* Main Title */
+    h2 { font-size: 1.8rem !important; }  /* Section headers */
+    h3 { font-size: 1.4rem !important; }  /* Sub headers */
     
-    /* 3. SECTION TITLE "EcoPlot AI: Landscape..." */
-    h2, h3 {
-        font-size: 22px !important;
-        font-weight: 700 !important;
-    }
+    /* 3. XEELAA ASSISTANT CHAT BUBBLES */
+    .stChatMessage { font-size: 16px !important; } /* User + AI messages */
+    .stChatMessage p { font-size: 16px !important; line-height: 1.6 !important; }
     
-    /* 4. DATA LABELS like Area, Rainfall */
-    label, .stMarkdown p {
-        font-size: 15px !important;
-        color: #666 !important;
-    }
+    /* 4. INPUT BOX + BUTTONS */
+    .stTextInput input { font-size: 16px !important; }
+    .stButton button { font-size: 16px !important; font-weight: 600 !important; }
     
-    /* 5. BIG NUMBERS like 1.00 Ha */
-    .stMetricValue {
-        font-size: 26px !important;
-        font-weight: 700 !important;
-    }
+    /* 5. SIDEBAR */
+    [data-testid="stSidebar"] { font-size: 15px !important; }
     
-    /* 6. FIX THE LONG DECIMAL */
-    .stMetricValue {
-        font-variant-numeric: tabular-nums;
-    }
+    /* 6. METRICS - like Rainfall, NDVI */
+    [data-testid="stMetricValue"] { font-size: 28px !important; }
+    [data-testid="stMetricLabel"] { font-size: 14px !important; }
 </style>
 """, unsafe_allow_html=True)
+
 
 # 1. GET KEY FROM STREAMLIT SECRETS
 api_key = st.secrets["XEELAA_API_KEY"]
