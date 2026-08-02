@@ -14,6 +14,52 @@ from logic import calculate_metrics
 from reporting import create_pdf_report
 from chatbot import get_ai_response
 from satellite_engine import get_real_ndvi, get_ndvi_time_series
+# CUSTOM CSS FOR FONT + DIVIDER
+st.markdown("""
+<style>
+    /* 1. ECOPLOTAI BRAND - BIGGEST */
+    h1 {
+        font-size: 34px !important; 
+        font-weight: 800 !important;
+        color: #2E7D32 !important; /* Farm Green */
+        margin-bottom: 5px !important;
+    }
+    
+    /* 2. XEELAA SUBTITLE - SMALLER */
+    .subtitle {
+        font-size: 18px !important;
+        color: #555 !important;
+        margin-bottom: 20px !important;
+    }
+    
+    /* 3. SECTION TITLE */
+    h2, h3 {
+        font-size: 22px !important;
+        font-weight: 700 !important;
+        color: #2E7D32 !important;
+    }
+    
+    /* 4. DATA LABELS */
+    label {
+        font-size: 15px !important;
+        color: #666 !important;
+    }
+    
+    /* 5. BIG NUMBERS */
+    .stMetricValue {
+        font-size: 26px !important;
+        font-weight: 700 !important;
+    }
+    
+    /* 6. GREEN DIVIDER */
+    .divider {
+        border-top: 3px solid #2E7D32;
+        margin: 25px 0;
+        border-radius: 2px;
+    }
+</style>
+""", unsafe_allow_html=True)
+
 
 # 1. GET KEY FROM STREAMLIT SECRETS
 api_key = st.secrets["XEELAA_API_KEY"]
