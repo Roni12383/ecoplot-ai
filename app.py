@@ -15,6 +15,14 @@ from reporting import create_pdf_report
 from chatbot import get_ai_response
 from satellite_engine import get_real_ndvi, get_ndvi_time_series
 
+
+
+def big_text(text, size="17px"):
+    st.markdown(f'<p style="font-size:{size}; line-height:1.7;">{text}</p>', unsafe_allow_html=True)
+
+def big_title(text, size="32px"):
+    st.markdown(f'<h1 style="font-size:{size}; font-weight:600;">{text}</h1>', unsafe_allow_html=True)
+
 info = json.loads(st.secrets["GCP_SERVICE_ACCOUNT"])
 credentials = ee.ServiceAccountCredentials(info['client_email'], key_data=st.secrets["GCP_SERVICE_ACCOUNT"])
 ee.Initialize(credentials, project=info['project_id'])
@@ -27,14 +35,6 @@ if "actual_ndvi" not in st.session_state:
     st.session_state.actual_ndvi = 0.0
 
 big_title("🌱 EcoPlot AI: Landscape Restoration Planner", "36px")
-
-
-
-def big_text(text, size="17px"):
-    st.markdown(f'<p style="font-size:{size}; line-height:1.7;">{text}</p>', unsafe_allow_html=True)
-
-def big_title(text, size="32px"):
-    st.markdown(f'<h1 style="font-size:{size}; font-weight:600;">{text}</h1>', unsafe_allow_html=True)
 
 # 1. GET KEY FROM STREAMLIT SECRETS
 api_key = st.secrets["XEELAA_API_KEY"]
