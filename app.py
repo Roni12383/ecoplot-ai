@@ -15,6 +15,20 @@ from reporting import create_pdf_report
 from chatbot import get_ai_response
 from satellite_engine import get_real_ndvi, get_ndvi_time_series
 
+info = json.loads(st.secrets["GCP_SERVICE_ACCOUNT"])
+credentials = ee.ServiceAccountCredentials(info['client_email'], key_data=st.secrets["GCP_SERVICE_ACCOUNT"])
+ee.Initialize(credentials, project=info['project_id'])
+
+st.set_page_config(page_title="EcoPlot AI", page_icon="🌱", layout="wide")
+
+st.set_page_config(page_title="EcoPlot AI", layout="wide")
+
+if "actual_ndvi" not in st.session_state:
+    st.session_state.actual_ndvi = 0.0
+
+big_title("🌱 EcoPlot AI: Landscape Restoration Planner", "36px")
+
+
 
 def big_text(text, size="17px"):
     st.markdown(f'<p style="font-size:{size}; line-height:1.7;">{text}</p>', unsafe_allow_html=True)
@@ -66,18 +80,6 @@ if "ndvi_time_series_df" not in st.session_state:
     st.session_state.ndvi_time_series_df = pd.DataFrame(columns=['date', 'NDVI'])
 
 
-info = json.loads(st.secrets["GCP_SERVICE_ACCOUNT"])
-credentials = ee.ServiceAccountCredentials(info['client_email'], key_data=st.secrets["GCP_SERVICE_ACCOUNT"])
-ee.Initialize(credentials, project=info['project_id'])
-
-st.set_page_config(page_title="EcoPlot AI", page_icon="🌱", layout="wide")
-
-st.set_page_config(page_title="EcoPlot AI", layout="wide")
-
-if "actual_ndvi" not in st.session_state:
-    st.session_state.actual_ndvi = 0.0
-
-big_title("🌱 EcoPlot AI: Landscape Restoration Planner", "36px")
 
 # --- SIDEBAR ---
 st.sidebar.header("Farm Input Data")
