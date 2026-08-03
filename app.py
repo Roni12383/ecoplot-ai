@@ -34,7 +34,7 @@ st.set_page_config(page_title="EcoPlot AI", layout="wide")
 if "actual_ndvi" not in st.session_state:
     st.session_state.actual_ndvi = 0.0
 
-big_title("🌱 EcoPlot AI: Landscape Restoration Planner", "65px")
+big_title("🌱 EcoPlot AI: Landscape Restoration Planner", "60px")
 
 # 1. GET KEY FROM STREAMLIT SECRETS
 api_key = st.secrets["XEELAA_API_KEY"]
