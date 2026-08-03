@@ -56,7 +56,7 @@ def ask_xeelaa(user_message, language="Hausa"):
     return response.json()["reply"]
 
 # 3. USE IT IN STREAMLIT
-st.title("Xeelaa - EcoPlotAI Assistant")
+st.title("Xeelaa - EcoPlotAI Assistant", "17px")
 user_input = st.text_input("Ask Xeelaa something in Hausa or English")
 
 if user_input:
