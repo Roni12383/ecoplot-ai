@@ -56,13 +56,13 @@ def ask_xeelaa(user_message, language="Hausa"):
     return response.json()["reply"]
 
 # 3. USE IT IN STREAMLIT
-big_title("Xeelaa - EcoPlotAI Assistant", "10px")
+big_title("Xeelaa - EcoPlotAI Assistant", "17px")
 user_input = st.text_input("Ask Xeelaa something in Hausa or English")
 
 if user_input:
     with st.spinner("Xeelaa is thinking..."):
         answer = ask_xeelaa(user_input)
-        st.write(answer)
+        big_write(answer, "17px)
 
 CARBON_COEFFICIENT = 35.0
 
