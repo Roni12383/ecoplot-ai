@@ -57,7 +57,7 @@ def ask_xeelaa(user_message, language="Hausa"):
 
 # 3. USE IT IN STREAMLIT
 big_title("Xeelaa - EcoPlotAI Assistant", "17px")
-user_input = big_text_input("Ask Xeelaa something in Hausa or English", 17px")
+user_input = big_text_input("Ask Xeelaa something in Hausa or English", "17px")
 
 if user_input:
     with st.spinner("Xeelaa is thinking..."):
