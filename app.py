@@ -62,7 +62,7 @@ user_input = st.text_input("Ask Xeelaa something in Hausa or English")
 if user_input:
     with st.spinner("Xeelaa is thinking..."):
         answer = ask_xeelaa(user_input)
-        big_write(answer, "17px)
+        big_write(answer, "17px")
 
 CARBON_COEFFICIENT = 35.0
 
