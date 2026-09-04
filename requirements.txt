@@ -10,4 +10,5 @@ earthengine-api
 openai
 pandas
 Numpy
-
+rasterio
+pyproj
