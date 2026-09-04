@@ -139,7 +139,6 @@ def create_full_report(pdf, farm_name, metrics):
     pdf.ln(3)
     pdf.multi_cell(0, 5, "Recommendations: Implement reforestation in low NDVI zones. Quarterly monitoring advised.")
 
-
 def create_pdf_report(farm_name, metrics, report_type="FULL", output_filename=None):
     """
     Generates a professional ESG Carbon report.
@@ -167,6 +166,6 @@ def create_pdf_report(farm_name, metrics, report_type="FULL", output_filename=No
         pdf.output(output_filename)
         return output_filename
     else:
-        # dest='S' returns as string, encode to bytes for Streamlit
-        return pdf.output(dest='S').encode('latin1')
+        # FIX FOR STREAMLIT CLOUD: Use bytearray directly
+        return bytearray(pdf.output())
 
