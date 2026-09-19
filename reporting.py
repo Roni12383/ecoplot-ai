@@ -168,4 +168,4 @@ def create_pdf_report(farm_name, metrics, report_type="FULL", output_filename=No
         return output_filename
     else:
         # dest='S' returns as string, encode to bytes for Streamlit
-        return pdf.output(dest='S').encode('latin1')
+        return pdf.output()
