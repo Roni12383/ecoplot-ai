@@ -24,7 +24,8 @@ class SIRAReport(FPDF):
         self.set_fill_color(*COLOR_GREEN)
         self.set_text_color(255, 255, 255)
         self.set_font("helvetica", 'B', 14)
-        self.cell(0, 12, f"SIRA VENTURES | {self.report_type} REPORT", align='R', fill=True, new_x="LMARGIN", new_y="NEXT")
+        self.set_xy(38, 9)
+        self.cell(142, 8, f"SIRA VENTURES | {self.report_type} REPORT", align='R', fill=True, new_x="LMARGIN", new_y="NEXT")
         
         self.set_text_color(0, 0, 0)
         self.set_font("helvetica", 'I', 8)
