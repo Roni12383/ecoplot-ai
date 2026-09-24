@@ -16,6 +16,11 @@ class SIRAReport(FPDF):
     def __init__(self, report_type="FULL"):
         super().__init__()
         self.report_type = report_type
+
+    def header(self):
+        logo_path = "logo.png"
+        if os.path.exists(logo_path):
+            self.image(logo_path, 10, 8, 25)
     
     def header(self):
         self.set_fill_color(*COLOR_GREEN)
@@ -28,10 +33,7 @@ class SIRAReport(FPDF):
         self.cell(0, 8, "Powered by EcoPlotAI - dMRV Platform", align='R', new_x="LMARGIN", new_y="NEXT")
         self.ln(3)
 
-    def header(self):
-        logo_path = "logo.png"
-        if os.path.exists(logo_path):
-            self.image(logo_path, 10, 8, 25)
+    
 
     def footer(self):
         self.set_y(-15)
