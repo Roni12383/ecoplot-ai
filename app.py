@@ -115,7 +115,8 @@ else: # Shapefile
 with st.spinner("Calculating metrics..."):
     if custom_geojson:
         # If custom polygon, still call calculate_metrics with center lat/lon but override area
-        metrics = calculate_metrics(lat, lon, ndvi_mean=st.session_state.actual_ndvi)
+        # Change this line in app.py
+        metrics = calculate_metrics(lat, lon, ndvi_mean=..., custom_geojson=custom_geojson)
         metrics["area_ha"] = area_ha_final # CORRECT hectare overwrite
         metrics["geometry_1ha_geojson"] = custom_geojson
         # Recalculate carbon based on TRUE area
