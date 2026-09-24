@@ -16,7 +16,6 @@ class SIRAReport(FPDF):
     def __init__(self, report_type="FULL"):
         super().__init__()
         self.report_type = report_type
-
     def header(self):
         logo_path = "logo.png"
         if os.path.exists(logo_path):
