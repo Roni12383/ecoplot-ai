@@ -21,7 +21,6 @@ class SIRAReport(FPDF):
         if os.path.exists(logo_path):
             self.image(logo_path, 10, 8, 25)
     
-    def header(self):
         self.set_fill_color(*COLOR_GREEN)
         self.set_text_color(255, 255, 255)
         self.set_font("helvetica", 'B', 14)
