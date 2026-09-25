@@ -3,93 +3,109 @@ from shapely.geometry import Point
 import pandas as pd
 import numpy as np
 import json
-from pyproj import Geod
 
-CARBON_FACTOR_TON_PER_HA = 5.2
-geod = Geod(ellps="WGS84")
+CARBON_FACTOR_TON_PER_HA = 5.2 # tC/ha for savanna
+NDVI_TO_CARBON_MULTIPLIER = 0.8
 
-def calculate_true_hectares_from_gdf(gdf_meter):
-    """True area from meter-projected gdf"""
-    area_m2 = gdf_meter.geometry.area.iloc[0]
-    return area_m2 / 10000
-
-def calculate_metrics(lat, lon, ndvi_mean=0.4, buffer_sizes=[100, 500], custom_geojson=None):
+def calculate_metrics(lat, lon, ndvi_mean=0.4, buffer_sizes=[100, 500], custom_geojson=None, hectares=1.0):
     """
-    FIXED VERSION - Supports:
-    1. Single point -> auto 1ha
-    2. custom_geojson from coordinates/shapefile -> true hectares
+    Calculate area, carbon, ESG metrics and buffers
+    - lat, lon: center point
+    - ndvi_mean: 0-1 from satellite
+    - custom_geojson: Polygon from shapefile or coordinates list
+    - hectares: dynamic input (1, 2, 5 etc) - fixes static 1ha bug
     """
-    # --- CASE 1: Custom polygon from shapefile or coordinates list ---
+
+    # 1. CREATE GEOMETRY - HANDLE 3 INPUT TYPES
     if custom_geojson:
-        # custom_geojson is dict like {"type":"Polygon", "coordinates":[...]}
-        gdf_custom = gpd.GeoDataFrame.from_features([{"type":"Feature","geometry":custom_geojson,"properties":{}}], crs="EPSG:4326")
-        # Use Nigeria UTM Zone 32N for TRUE area - not 3857
-        gdf_meter = gdf_custom.to_crs(epsg=32632) # UTM 32N accurate for Nigeria
+        # CASE A: User uploaded shapefile or typed coordinates list
+        # custom_geojson = {"type": "Polygon", "coordinates": [[...]]}
+        gdf_wgs = gpd.GeoDataFrame.from_features(
+            [{"type": "Feature", "geometry": custom_geojson, "properties": {}}],
+            crs="EPSG:4326"
+        )
+        # Use UTM Zone 32N for Nigeria - accurate meters, not 3857
+        gdf_meter = gdf_wgs.to_crs(epsg=32632)
+        gdf_meter['geometry_1ha'] = gdf_meter.geometry
         area_ha = gdf_meter.geometry.area.iloc[0] / 10000
 
-        # For map
-        gdf_1ha = gdf_custom
-        bounds = gdf_custom.total_bounds
-
-        # Buffers from custom polygon
-        buffers = {}
-        for size in buffer_sizes:
-            buf_meter = gdf_meter.geometry.buffer(size)
-            buf_wgs = gpd.GeoDataFrame(geometry=buf_meter, crs="EPSG:32632").to_crs(epsg=4326)
-            buffers[f'buffer_{size}m'] = json.loads(buf_wgs.to_json())['features'][0]['geometry']
-
-        gdf_final_geojson = custom_geojson # keep original
+        # For buffers, we need a point version too
+        gdf_point_meter = gpd.GeoDataFrame(
+            geometry=gpd.points_from_xy([lon], [lat]), crs="EPSG:4326"
+        ).to_crs(epsg=32632)
 
     else:
-        # --- CASE 2: Single point -> create 1ha circle ---
+        # CASE B: Single point + dynamic hectares (2ha = 2ha)
         df = pd.DataFrame({'lat': [lat], 'lon': [lon]})
-        gdf = gpd.GeoDataFrame(df, geometry=gpd.points_from_xy(df.lon, df.lat), crs="EPSG:4326")
+        gdf_wgs = gpd.GeoDataFrame(df, geometry=gpd.points_from_xy(df.lon, df.lat), crs="EPSG:4326")
 
-        # FIX: Use UTM 32N (EPSG:32632) for Nigeria, not 3857
-        gdf_meter = gdf.to_crs(epsg=32632)
+        # FIX: Use EPSG:32632 (UTM 32N) for Nigeria - not 3857 which stretches 18%
+        gdf_meter = gdf_wgs.to_crs(epsg=32632)
 
-        radius_for_1ha = np.sqrt(10000 / np.pi) # 56.41m
-        gdf_meter['geometry_1ha'] = gdf_meter.geometry.buffer(radius_for_1ha)
+        # DYNAMIC radius: sqrt(hectares * 10000 / pi)
+        # 1ha = 56.41m radius, 2ha = 79.78m radius
+        radius_for_ha = np.sqrt((hectares * 10000) / np.pi)
+        gdf_meter['geometry_1ha'] = gdf_meter.geometry.buffer(radius_for_ha)
+        area_ha = gdf_meter['geometry_1ha'].area.iloc[0] / 10000
 
-        area_ha = gdf_meter['geometry_1ha'].area.iloc[0] / 10000 # Should be exactly 1.0 now
+        gdf_point_meter = gdf_meter
 
-        buffers = {}
-        for size in buffer_sizes:
-            buffers[f'buffer_{size}m'] = gdf_meter.geometry.buffer(size)
+    # 2. CREATE BUFFERS (100m, 500m)
+    buffers_meter = {}
+    for size in buffer_sizes:
+        if custom_geojson:
+            buffers_meter[f'buffer_{size}m'] = gdf_meter.geometry.buffer(size)
+        else:
+            buffers_meter[f'buffer_{size}m'] = gdf_point_meter.geometry.buffer(size)
 
-        # Back to WGS84 for mapping - FIX: Return single geometry, not FeatureCollection
-        gdf_1ha_wgs = gpd.GeoDataFrame(geometry=gdf_meter['geometry_1ha'], crs="EPSG:32632").to_crs(epsg=4326)
-        gdf_final_geojson = json.loads(gdf_1ha_wgs.to_json())['features'][0]['geometry']
-        bounds = gdf_1ha_wgs.total_bounds
+    # 3. CARBON CALCULATION - Uses TRUE area
+    if ndvi_mean <= 0:
+        ndvi_mean = 0.4
 
-        # Convert buffers to geojson geometries
-        buffers_geojson = {}
-        for k, v in buffers.items():
-            buf_wgs = gpd.GeoDataFrame(geometry=v, crs="EPSG:32632").to_crs(epsg=4326)
-            buffers_geojson[k] = json.loads(buf_wgs.to_json())['features'][0]['geometry']
-        buffers = buffers_geojson
-
-    # --- CARBON (same formula but with TRUE area) ---
-    if ndvi_mean <= 0: ndvi_mean = 0.4
     carbon_stock_tC = area_ha * ndvi_mean * CARBON_FACTOR_TON_PER_HA
     carbon_stock_tCO2e = carbon_stock_tC * 3.67
 
-    # --- ESG ---
+    # 4. SUSTAINABILITY / ESG
     if ndvi_mean > 0.5:
-        veg_health = "Good"; esg_score = "A"; risk = "Low"
+        veg_health = "Good"
+        esg_score = "A"
+        risk = "Low"
     elif ndvi_mean > 0.3:
-        veg_health = "Moderate"; esg_score = "B"; risk = "Medium"
+        veg_health = "Moderate"
+        esg_score = "B"
+        risk = "Medium"
     else:
-        veg_health = "Poor"; esg_score = "C"; risk = "High"
+        veg_health = "Poor"
+        esg_score = "C"
+        risk = "High"
 
     degradation_percent = round((1 - ndvi_mean) * 100, 2)
 
+    # 5. BACK TO LAT/LON FOR MAPPING - FIXED to return Polygon not FeatureCollection
+    gdf_1ha_wgs = gpd.GeoDataFrame(geometry=gdf_meter['geometry_1ha'], crs="EPSG:32632").to_crs(epsg=4326)
+    bounds = gdf_1ha_wgs.total_bounds # [minx, miny, maxx, maxy]
+
+    # Single Polygon geometry for folium
+    geometry_1ha_geojson = json.loads(gdf_1ha_wgs.to_json())['features'][0]['geometry']
+
+    # Buffers to GeoJSON
+    buffers_geojson = {}
+    for k, v in buffers_meter.items():
+        buf_wgs = gpd.GeoDataFrame(geometry=v, crs="EPSG:32632").to_crs(epsg=4326)
+        buffers_geojson[k] = json.loads(buf_wgs.to_json())['features'][0]['geometry']
+
+    # 6. BUILD OUTPUT
     result = {
-        "area_ha": round(area_ha, 3), # TRUE hectares now
+        "area_ha": round(area_ha, 3),
         "center_coord": {"lat": lat, "lon": lon},
-        "bounding_box": {"min_lon": bounds[0], "min_lat": bounds[1], "max_lon": bounds[2], "max_lat": bounds[3]},
-        "geometry_1ha_geojson": gdf_final_geojson, # Single Polygon, not FeatureCollection
-        "buffers_geojson": buffers,
+        "bounding_box": {
+            "min_lon": bounds[0],
+            "min_lat": bounds[1],
+            "max_lon": bounds[2],
+            "max_lat": bounds[3]
+        },
+        "geometry_1ha_geojson": geometry_1ha_geojson,
+        "buffers_geojson": buffers_geojson,
         "carbon": {
             "ndvi_mean": round(ndvi_mean, 3),
             "carbon_stock_tC": round(carbon_stock_tC, 3),
@@ -103,4 +119,5 @@ def calculate_metrics(lat, lon, ndvi_mean=0.4, buffer_sizes=[100, 500], custom_g
             "risk_level": risk
         }
     }
+
     return result
