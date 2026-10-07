@@ -38,7 +38,7 @@ class SIRAReport(FPDF):
         self.set_y(-15)
         self.set_font("helvetica", 'I', 8)
         self.set_text_color(100, 100, 100)
-        self.cell(0, 10, f'Page {self.page_no()} | Confidential | contact@siraventures.com', align='C')
+        self.cell(0, 10, f'Page {self.page_no()} | Confidential | sirajronee@gmail.com', align='C')
 
     def section_title(self, title):
         self.set_font("helvetica", 'B', 12)
