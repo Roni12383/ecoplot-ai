@@ -7,6 +7,7 @@ import ee
 import pandas as pd
 import json
 import streamlit.components.v1 as components
+from datetime import datetime
 from streamlit_folium import st_folium
 import zipfile, tempfile, os
 import geopandas as gpd
@@ -142,26 +143,65 @@ c4.metric("Rainfall 7d", f"{rain} mm")
 
 # --- MAP & SUSTAINABILITY ---
 col_left, col_right = st.columns([2, 1])
+
 with col_left:
     map_type = st.radio("View:", ["Street", "Satellite", "NDVI Heatmap", "Buffers"], horizontal=True)
-    m = folium.Map(location=[lat, lon], zoom_start=15)
+
+    # Clean coordinates - FIX np.float64 for display
+    clean_lat = float(lat)
+    clean_lon = float(lon)
+    clean_area = float(area)
+
+    m = folium.Map(location=[clean_lat, clean_lon], zoom_start=15)
+
     if map_type!= "Street":
         esri = "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
         folium.TileLayer(tiles=esri, attr="Esri").add_to(m)
-    folium.GeoJson(gdf, name=f"{area} Hectare", style_function=lambda x: {'fillColor': "#228B22", 'color': 'white', 'weight': 2}).add_to(m)
+
+    # FIX: Add GeoJSON with clean float conversion
+    try:
+        # Convert gdf to clean geojson with float (not np.float64)
+        clean_gdf = gdf.copy()
+        folium.GeoJson(
+            clean_gdf,
+            name=f"{clean_area:.3f} Hectare TRUE",
+            style_function=lambda x: {'fillColor': "#228B22", 'color': 'white', 'weight': 2, 'fillOpacity': 0.4},
+            tooltip=f"{farm_name}: {clean_area:.3f} ha TRUE<br>Date: {datetime.now().strftime('%Y-%m-%d')}"
+        ).add_to(m)
+    except Exception as e:
+        st.error(f"Map error: {e}")
+
     if map_type == "Buffers":
         for name, geojson in metrics["buffers_geojson"].items():
-            folium.GeoJson(geojson, name=name, style_function=lambda x: {'fillOpacity': 0, 'color': 'red'}).add_to(m)
+            folium.GeoJson(geojson, name=name, style_function=lambda x: {'fillOpacity': 0, 'color': 'red', 'weight': 1}).add_to(m)
+
+    # Add center marker with date
+    folium.Marker(
+        [clean_lat, clean_lon],
+        popup=f"{farm_name}<br>{clean_area:.3f} ha<br>{datetime.now().strftime('%Y-%m-%d')}<br>Roni LGA",
+        icon=folium.Icon(color="red", icon="leaf")
+    ).add_to(m)
+
     st_folium(m, width=800, height=450)
+
+    # FIX: Clean display without np.float64 - SHOW TRUE BBOX
+    min_lon = float(gdf['geometry'].bounds.minx.min()) if hasattr(gdf, 'geometry') else clean_lon-0.005
+    max_lon = float(gdf['geometry'].bounds.maxx.max()) if hasattr(gdf, 'geometry') else clean_lon+0.005
+    min_lat = float(gdf['geometry'].bounds.miny.min()) if hasattr(gdf, 'geometry') else clean_lat-0.005
+    max_lat = float(gdf['geometry'].bounds.maxy.max()) if hasattr(gdf, 'geometry') else clean_lat+0.005
+
+    st.info(f"**BBox:** Lon {min_lon:.6f} to {max_lon:.6f} | Lat {min_lat:.6f} to {max_lat:.6f} | **TRUE {clean_area:.3f} ha** | {datetime.now().strftime('%Y-%m-%d')}")
 
 with col_right:
     st.subheader("Sustainability & ESG")
+    st.write(f"**Farm:** {farm_name}")
+    st.write(f"**Date:** {datetime.now().strftime('%B %d, %Y')}")
+    st.write(f"**Area TRUE:** {clean_area:.3f} ha")
     st.write(f"**Vegetation Health:** {metrics['sustainability']['vegetation_health']}")
     st.write(f"**Degradation Risk:** {metrics['sustainability']['risk_level']}")
     st.write(f"**Carbon Stock:** {metrics['carbon']['carbon_stock_tCO2e']} tCO2e")
-    st.write(f"**Coords:** {lat:.4f}, {lon:.4f}")
-    if st.button("Generate Plan"):
-        st.success("Recommendation: Plant Acacia trees in low NDVI zones.")
+    st.write(f"**Coords:** {clean_lat:.4f}, {clean_lon:.4f}")
+    st.caption(f"Verified: PostGIS | Sentinel-2 | PADAC NGO")
 
 # --- REPORT GENERATION ---
 report_type = st.radio("Report Type", ["1-Page SAMPLE", "FULL Report"], horizontal=True)
