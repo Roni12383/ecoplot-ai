@@ -11,7 +11,6 @@ st.set_page_config(
 
 # --- GET PLOT ID FROM URL ---
 # URL will be: https://ecoplotai.streamlit.app/verify?plot_id=JGW-RONI-012
-# Or: https://ecoplotai.ng/verify/JGW-RONI-012 (if you have custom domain)
 plot_id = st.query_params.get("plot_id", "")
 
 # For testing, if no plot_id in URL, allow manual input
