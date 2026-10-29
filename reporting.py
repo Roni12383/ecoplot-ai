@@ -243,7 +243,7 @@ def create_eudr_v2_report(pdf, farm_name, metrics, eudr_data):
     pdf.set_font("helvetica", size=8)
     
     pdf_hash = eudr_data.get('pdf_hash', 'a3f5c9e8b7d6')
-    verification_url = f"https://ecoplotai.ng/verify/{farm_name}"
+    verification_url = f"https://ecoplotai.streamlit.app/verify/{farm_name}"
     
     audit_text = (
         f"Generated: {datetime.datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S UTC')} by EcoPlotAI Server v2.1 - Roni LGA - Automated - No manual edit\n"
@@ -297,7 +297,7 @@ def create_pdf_report(farm_name, metrics, report_type="FULL", output_filename=No
     if isinstance(fetch_display, datetime.datetime):
         fetch_display = fetch_display.strftime('%Y-%m-%d %H:%M:%S UTC')
     
-    verification_url = f"https://ecoplotai.ng/verify/{farm_name}" if eudr_data else "https://ecoplotai.streamlit.app"
+    verification_url = f"https://ecoplotai.streamlit.app/verify/{farm_name}" if eudr_data else "https://ecoplotai.streamlit.app"
     
     pdf.multi_cell(0, 5, clean_text(f"This data is generated via EcoPlot AI Sovereign dMRV protocol:\n"
                          f"- Satellite: Sentinel-2 NDVI 10m - Source: {eudr_data.get('source','Sentinel-2') if eudr_data else 'Sentinel-2'}\n"
