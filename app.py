@@ -1,4 +1,4 @@
-import streamlit as sts
+import streamlit as st
 import plotly_express as px
 import requests
 import folium
