@@ -1,12 +1,15 @@
-streamlit
-plotly-express
-requests
-folium
-streamlit-folium
-geopandas
-shapely
-fpdf2
-earthengine-api
-openai
-
+streamlit==1.35.0
+fpdf2==2.7.7
+geopandas==0.14.3
+shapely==2.0.2
+earthengine-api==0.1.391
+pandas==2.2.0
+plotly==5.18.0
+folium==0.15.0
+streamlit-folium==0.14.0
+pyproj==3.6.1
+requests==2.31.0
+qrcode[pil]==7.4.2
+Pillow==10.2.0
+supabase==2.7.0
 
