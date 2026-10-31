@@ -15,7 +15,7 @@ import streamlit.components.v1 as components
 # --- IMPORT YOUR MODULES ---
 from logic import calculate_metrics
 from reporting import create_pdf_report, clean_text
-from ee import get_eudr_ndvi_for_dates, get_ndvi
+from ee_utils import get_eudr_ndvi_for_dates, get_ndvi
 
 # Try import supabase
 try:
