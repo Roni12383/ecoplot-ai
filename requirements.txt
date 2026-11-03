@@ -8,5 +8,6 @@ shapely
 fpdf2
 earthengine-api
 openai
+supabase==2.7.0
 
 
