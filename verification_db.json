@@ -1,0 +1,25 @@
+{
+  "JGW-RONI-012": {
+    "farm_name": "Musa Garba - JGW-RONI-012",
+    "true_hectare": 11.981,
+    "center_lat": 12.0022,
+    "center_lon": 8.592,
+    "start_date": "2020-12-31",
+    "end_date": "2026-10-27",
+    "ndvi_start": 0.58,
+    "ndvi_end": 0.62,
+    "ndvi_change": 0.04,
+    "forest_cover": 5,
+    "risk": "LOW",
+    "compliant": "YES - EUDR COMPLIANT",
+    "source": "Sentinel-2 L2A - Google Earth Engine",
+    "fetch_time": "2026-10-27T10:29:00Z",
+    "pdf_hash": "a3f5c9e8b7d6f4e2",
+    "evidence_url": "https://code.earthengine.google.com/?lat=12.0022&lon=8.592",
+    "product": "Sesame",
+    "generated_time": "2026-10-27 10:30:15 UTC",
+    "server": "EcoPlotAI Server v2.1 - Roni LGA",
+    "verification_url": "https://ecoplotai.streamlit.app/verify?plot_id=JGW-RONI-012&hash=a3f5c9e8b7d6f4e2",
+    "method": "WGS84 TRUE hectare + Sentinel-2 NDVI"
+  }
+}
