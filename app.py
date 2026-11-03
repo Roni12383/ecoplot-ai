@@ -400,68 +400,115 @@ st.session_state.verification_db = verification_db
 st.success(f"Saved to DB - Plot {plot_id_key} - {len(verification_db)} total - verify.py will now find it")
 
         # --- SAVE TO VERIFICATION DB - For verify.py to read - Works for any report ---
+# --- SUPABASE SAVE - PERSISTENT - Works for all reports - No file upload needed ---
+from supabase import create_client
 
-# Ensure verification_db.json exists - Create if not
-db_path = "verification_db.json"
+# Get Supabase credentials from secrets
+supabase_url = st.secrets.get("SUPABASE_URL", "")
+supabase_service_key = st.secrets.get("SUPABASE_SERVICE_KEY", st.secrets.get("SUPABASE_ANON_KEY", ""))
 
-# Load existing DB
-if os.path.exists(db_path):
+if supabase_url and supabase_service_key:
     try:
-        with open(db_path, 'r') as f:
-            verification_db = json.load(f)
-    except:
+        supabase = create_client(supabase_url, supabase_service_key)
+        
+        # Prepare data for Supabase - Same as before but for DB
+        plot_id_key = farm_name
+        
+        supabase_data = {
+            "plot_id": plot_id_key,
+            "farm_name": farm_name,
+            "true_hectare": float(metrics['area_ha']),
+            "center_lat": float(metrics['center_coord']['lat']),
+            "center_lon": float(metrics['center_coord']['lon']),
+            "start_date": str(st.session_state.eudr_data['start_date']),
+            "end_date": str(st.session_state.eudr_data['end_date']),
+            "ndvi_start": float(st.session_state.eudr_data['ndvi_start']),
+            "ndvi_end": float(st.session_state.eudr_data['ndvi_end']),
+            "ndvi_change": float(st.session_state.eudr_data.get('ndvi_change', 0)),
+            "forest_cover": int(st.session_state.eudr_data.get('forest_cover', 5)),
+            "risk": st.session_state.eudr_data.get('risk', 'LOW'),
+            "compliant": st.session_state.eudr_data.get('compliant', 'YES - EUDR COMPLIANT'),
+            "source": st.session_state.eudr_data.get('source', 'Sentinel-2 L2A'),
+            "fetch_time": str(st.session_state.eudr_data.get('fetch_time', datetime.utcnow())),
+            "pdf_hash": pdf_hash,
+            "evidence_url": st.session_state.eudr_data.get('evidence_url', f"https://code.earthengine.google.com/?lat={lat}&lon={lon}"),
+            "product": st.session_state.eudr_data.get('product', 'Sesame'),
+            "generated_time": datetime.utcnow().isoformat(),
+            "server": "EcoPlotAI Server v2.1 - Roni LGA, Nigeria",
+            "verification_url": verification_url,
+            "method": "WGS84 TRUE hectare + Sentinel-2 NDVI"
+        }
+        
+        # Upsert - Insert or update if plot_id exists
+        # Supabase upsert - On conflict plot_id, update
+        response = supabase.table("eudr_verification").upsert(
+            supabase_data, 
+            on_conflict="plot_id"
+        ).execute()
+        
+        st.success(f"✅ Saved to Supabase - Persistent DB - Plot {plot_id_key} - Hash {pdf_hash}")
+        st.write(f"Total plots in Supabase: Check dashboard - https://supabase.com/dashboard")
+        st.write(f"Verify now: {verification_url} - Works immediately - No file upload needed")
+        
+        # Also save to session_state for immediate verification
+        st.session_state.supabase_saved = True
+        
+    except Exception as e:
+        st.error(f"Supabase save error: {e}")
+        st.warning("Falling back to file save - Add SUPABASE_URL and SUPABASE_SERVICE_KEY to secrets")
+        # Fallback to file save
+        import json, os
+        db_path = "verification_db.json"
         verification_db = {}
+        if os.path.exists(db_path):
+            try:
+                with open(db_path, 'r') as f:
+                    verification_db = json.load(f)
+            except:
+                pass
+        verification_db[plot_id_key] = supabase_data
+        with open(db_path, 'w') as f:
+            json.dump(verification_db, f, indent=2)
+        st.write(f"Saved to file fallback: {db_path}")
 else:
+    st.warning("Supabase not configured - Add SUPABASE_URL and SUPABASE_SERVICE_KEY to Streamlit secrets - Using file fallback")
+    # Fallback file save - As before
+    import json, os
+    db_path = "verification_db.json"
     verification_db = {}
-
-# Add current report to DB - This makes verify.py work for this plot_id
-# Use farm_name as plot_id - Or create unique ID
-plot_id_key = farm_name  # Or use farm_name.replace(" ", "_") if spaces
-
-verification_db[plot_id_key] = {
-    "farm_name": farm_name,
-    "true_hectare": float(metrics['area_ha']),
-    "center_lat": float(metrics['center_coord']['lat']),
-    "center_lon": float(metrics['center_coord']['lon']),
-    "start_date": str(st.session_state.eudr_data['start_date']),
-    "end_date": str(st.session_state.eudr_data['end_date']),
-    "ndvi_start": float(st.session_state.eudr_data['ndvi_start']),
-    "ndvi_end": float(st.session_state.eudr_data['ndvi_end']),
-    "ndvi_change": float(st.session_state.eudr_data.get('ndvi_change', 0)),
-    "forest_cover": int(st.session_state.eudr_data.get('forest_cover', 5)),
-    "risk": st.session_state.eudr_data.get('risk', 'LOW'),
-    "compliant": st.session_state.eudr_data.get('compliant', 'YES - EUDR COMPLIANT'),
-    "source": st.session_state.eudr_data.get('source', 'Sentinel-2 L2A'),
-    "fetch_time": str(st.session_state.eudr_data.get('fetch_time', datetime.utcnow())),
-    "pdf_hash": st.session_state.eudr_data['pdf_hash'],
-    "evidence_url": st.session_state.eudr_data.get('evidence_url', f"https://code.earthengine.google.com/?lat={lat}&lon={lon}"),
-    "product": st.session_state.eudr_data.get('product', 'Sesame'),
-    "generated_time": datetime.utcnow().isoformat(),
-    "server": "EcoPlotAI Server v2.1 - Roni LGA, Nigeria",
-    "verification_url": st.session_state.eudr_data.get('verification_url', f"https://ecoplotai.streamlit.app/verify?plot_id={farm_name}&hash={pdf_hash}"),
-    "method": "WGS84 Ellipsoid PostGIS TRUE hectare + Sentinel-2 NDVI"
-}
-
-# Save back to file
-try:
+    if os.path.exists(db_path):
+        try:
+            with open(db_path, 'r') as f:
+                verification_db = json.load(f)
+        except:
+            pass
+    verification_db[plot_id_key] = {
+        "farm_name": farm_name,
+        "true_hectare": float(metrics['area_ha']),
+        "center_lat": float(metrics['center_coord']['lat']),
+        "center_lon": float(metrics['center_coord']['lon']),
+        "start_date": str(st.session_state.eudr_data['start_date']),
+        "end_date": str(st.session_state.eudr_data['end_date']),
+        "ndvi_start": float(st.session_state.eudr_data['ndvi_start']),
+        "ndvi_end": float(st.session_state.eudr_data['ndvi_end']),
+        "ndvi_change": float(st.session_state.eudr_data.get('ndvi_change', 0)),
+        "forest_cover": int(st.session_state.eudr_data.get('forest_cover', 5)),
+        "risk": st.session_state.eudr_data.get('risk', 'LOW'),
+        "compliant": st.session_state.eudr_data.get('compliant', 'YES - EUDR COMPLIANT'),
+        "source": st.session_state.eudr_data.get('source', 'Sentinel-2 L2A'),
+        "fetch_time": str(st.session_state.eudr_data.get('fetch_time', datetime.utcnow())),
+        "pdf_hash": pdf_hash,
+        "evidence_url": st.session_state.eudr_data.get('evidence_url', f"https://code.earthengine.google.com/?lat={lat}&lon={lon}"),
+        "product": st.session_state.eudr_data.get('product', 'Sesame'),
+        "generated_time": datetime.utcnow().isoformat(),
+        "server": "EcoPlotAI Server v2.1 - Roni LGA",
+        "verification_url": verification_url,
+        "method": "WGS84 TRUE hectare + Sentinel-2 NDVI"
+    }
     with open(db_path, 'w') as f:
         json.dump(verification_db, f, indent=2)
-    st.success(f"✅ Saved to verification DB - Plot {plot_id_key} - Hash {pdf_hash} - Now verify.py will find it")
-    st.write(f"DB file: {db_path} - Contains {len(verification_db)} plots - You can download this file")
-except Exception as e:
-    st.error(f"Failed to save verification DB: {e} - For Streamlit Cloud, file system is ephemeral - Use alternative below")
 
-# Alternative for Streamlit Cloud - Save to session_state + Download button for DB
-st.session_state.verification_db = verification_db
 
-# Provide download button for verification_db.json - So you can keep it
-db_json_str = json.dumps(verification_db, indent=2)
-st.download_button(
-    label="📥 Download verification_db.json - Keep this file - Upload to repo",
-    data=db_json_str,
-    file_name="verification_db.json",
-    mime="application/json"
-)
         
         # Create PDF report - Pass EUDR data with dates
         st.session_state.pdf_report = create_pdf_report(
