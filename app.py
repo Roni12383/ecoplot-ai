@@ -346,12 +346,7 @@ if st.button("Analyze Farm & Generate Report", type="primary"):
                 "product": product_type if 'product_type' in locals() else "Sesame",
                 "consent": True
             }
-        
-        # Generate hash for audit - Proves PDF not edited later
-        data_string = f"{farm_name}{area}{st.session_state.eudr_data['start_date']}{st.session_state.eudr_data['end_date']}{st.session_state.eudr_data['ndvi_start']}{st.session_state.eudr_data['ndvi_end']}{datetime.utcnow().isoformat()}"
-        pdf_hash = hashlib.sha256(data_string.encode()).hexdigest()[:16]
-        st.session_state.eudr_data["pdf_hash"] = pdf_hash
-        # In app.py - After generating PDF - Around line 355
+
 
 # Generate hash
 data_string = f"{farm_name}{area}{st.session_state.eudr_data['start_date']}{st.session_state.eudr_data['end_date']}{st.session_state.eudr_data['ndvi_start']}{st.session_state.eudr_data['ndvi_end']}{datetime.utcnow().isoformat()}"
