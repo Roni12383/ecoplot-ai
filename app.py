@@ -9,7 +9,7 @@ import json
 import os
 import hashlib
 import streamlit.components.v1 as components
-from datetime import datetime, date
+from datetime import datetime as dt
 from streamlit_folium import st_folium
 import zipfile, tempfile, os
 import geopandas as gpd
@@ -349,12 +349,11 @@ if st.button("Analyze Farm & Generate Report", type="primary"):
 
 
 # Generate hash
-data_string = f"{farm_name}{area}{st.session_state.eudr_data['start_date']}{st.session_state.eudr_data['end_date']}{st.session_state.eudr_data['ndvi_start']}{st.session_state.eudr_data['ndvi_end']}{datetime.utcnow().isoformat()}"
+data_string = f"{farm_name}{area}{st.session_state.eudr_data['start_date']}{st.session_state.eudr_data['end_date']}{st.session_state.eudr_data['ndvi_start']}{st.session_state.eudr_data['ndvi_end']}{dt.utcnow().isoformat()}"
 pdf_hash = hashlib.sha256(data_string.encode()).hexdigest()[:16]
 st.session_state.eudr_data["pdf_hash"] = pdf_hash
 verification_url = f"https://ecoplotai.streamlit.app/verify?plot_id={farm_name}&hash={pdf_hash}&start={st.session_state.eudr_data['start_date']}&end={st.session_state.eudr_data['end_date']}&ndvi_start={st.session_state.eudr_data['ndvi_start']}&ndvi_end={st.session_state.eudr_data['ndvi_end']}"
 st.session_state.eudr_data["verification_url"] = verification_url
-
 # SAVE TO DB - NEW - Makes verify work for any plot
 import json, os
 db_path = "verification_db.json"
@@ -366,7 +365,6 @@ if os.path.exists(db_path):
             verification_db = {}
 else:
     verification_db = {}
-
 plot_id_key = farm_name
 verification_db[plot_id_key] = {
     "farm_name": farm_name,
@@ -382,38 +380,31 @@ verification_db[plot_id_key] = {
     "risk": st.session_state.eudr_data.get('risk', 'LOW'),
     "compliant": st.session_state.eudr_data.get('compliant', 'YES - EUDR COMPLIANT'),
     "source": st.session_state.eudr_data.get('source', 'Sentinel-2 L2A'),
-    "fetch_time": str(st.session_state.eudr_data.get('fetch_time', datetime.utcnow())),
+    "fetch_time": str(st.session_state.eudr_data.get('fetch_time', dt.utcnow())),
     "pdf_hash": pdf_hash,
     "evidence_url": st.session_state.eudr_data.get('evidence_url', f"https://code.earthengine.google.com/?lat={lat}&lon={lon}"),
     "product": st.session_state.eudr_data.get('product', 'Sesame'),
-    "generated_time": datetime.utcnow().isoformat(),
+    "generated_time": dt.utcnow().isoformat(),
     "server": "EcoPlotAI Server v2.1 - Roni LGA",
     "verification_url": verification_url,
     "method": "WGS84 TRUE hectare + Sentinel-2 NDVI"
 }
-
 # Save
 with open(db_path, 'w') as f:
     json.dump(verification_db, f, indent=2)
-
 st.session_state.verification_db = verification_db
 st.success(f"Saved to DB - Plot {plot_id_key} - {len(verification_db)} total - verify.py will now find it")
-
-        # --- SAVE TO VERIFICATION DB - For verify.py to read - Works for any report ---
+# --- SAVE TO VERIFICATION DB - For verify.py to read - Works for any report ---
 # --- SUPABASE SAVE - PERSISTENT - Works for all reports - No file upload needed ---
 from supabase import create_client
-
 # Get Supabase credentials from secrets
 supabase_url = st.secrets.get("SUPABASE_URL", "")
 supabase_service_key = st.secrets.get("SUPABASE_SERVICE_KEY", st.secrets.get("SUPABASE_ANON_KEY", ""))
-
 if supabase_url and supabase_service_key:
     try:
         supabase = create_client(supabase_url, supabase_service_key)
-        
         # Prepare data for Supabase - Same as before but for DB
         plot_id_key = farm_name
-        
         supabase_data = {
             "plot_id": plot_id_key,
             "farm_name": farm_name,
@@ -429,30 +420,25 @@ if supabase_url and supabase_service_key:
             "risk": st.session_state.eudr_data.get('risk', 'LOW'),
             "compliant": st.session_state.eudr_data.get('compliant', 'YES - EUDR COMPLIANT'),
             "source": st.session_state.eudr_data.get('source', 'Sentinel-2 L2A'),
-            "fetch_time": str(st.session_state.eudr_data.get('fetch_time', datetime.utcnow())),
+            "fetch_time": str(st.session_state.eudr_data.get('fetch_time', dt.utcnow())),
             "pdf_hash": pdf_hash,
             "evidence_url": st.session_state.eudr_data.get('evidence_url', f"https://code.earthengine.google.com/?lat={lat}&lon={lon}"),
             "product": st.session_state.eudr_data.get('product', 'Sesame'),
-            "generated_time": datetime.utcnow().isoformat(),
+            "generated_time": dt.utcnow().isoformat(),
             "server": "EcoPlotAI Server v2.1 - Roni LGA, Nigeria",
             "verification_url": verification_url,
             "method": "WGS84 TRUE hectare + Sentinel-2 NDVI"
         }
-        
         # Upsert - Insert or update if plot_id exists
         # Supabase upsert - On conflict plot_id, update
         response = supabase.table("eudr_verification").upsert(
-            supabase_data, 
-            on_conflict="plot_id"
+            supabase_data, on_conflict="plot_id"
         ).execute()
-        
         st.success(f"✅ Saved to Supabase - Persistent DB - Plot {plot_id_key} - Hash {pdf_hash}")
         st.write(f"Total plots in Supabase: Check dashboard - https://supabase.com/dashboard")
         st.write(f"Verify now: {verification_url} - Works immediately - No file upload needed")
-        
         # Also save to session_state for immediate verification
         st.session_state.supabase_saved = True
-        
     except Exception as e:
         st.error(f"Supabase save error: {e}")
         st.warning("Falling back to file save - Add SUPABASE_URL and SUPABASE_SERVICE_KEY to secrets")
@@ -496,18 +482,17 @@ else:
         "risk": st.session_state.eudr_data.get('risk', 'LOW'),
         "compliant": st.session_state.eudr_data.get('compliant', 'YES - EUDR COMPLIANT'),
         "source": st.session_state.eudr_data.get('source', 'Sentinel-2 L2A'),
-        "fetch_time": str(st.session_state.eudr_data.get('fetch_time', datetime.utcnow())),
+        "fetch_time": str(st.session_state.eudr_data.get('fetch_time', dt.utcnow())),
         "pdf_hash": pdf_hash,
         "evidence_url": st.session_state.eudr_data.get('evidence_url', f"https://code.earthengine.google.com/?lat={lat}&lon={lon}"),
         "product": st.session_state.eudr_data.get('product', 'Sesame'),
-        "generated_time": datetime.utcnow().isoformat(),
+        "generated_time": dt.utcnow().isoformat(),
         "server": "EcoPlotAI Server v2.1 - Roni LGA",
         "verification_url": verification_url,
         "method": "WGS84 TRUE hectare + Sentinel-2 NDVI"
     }
     with open(db_path, 'w') as f:
         json.dump(verification_db, f, indent=2)
-
 
         
         # Create PDF report - Pass EUDR data with dates
