@@ -9,7 +9,7 @@ import json
 import os
 import hashlib
 import streamlit.components.v1 as components
-from datetime import datetime as dt
+from datetime import date
 from streamlit_folium import st_folium
 import zipfile, tempfile, os
 import geopandas as gpd
