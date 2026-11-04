@@ -14,6 +14,7 @@ from streamlit_folium import st_folium
 import zipfile, tempfile, os
 import geopandas as gpd
 from pyproj import Geod
+from supabase import create_client
 
 # Imports from custom project files
 from logic import calculate_metrics
@@ -53,6 +54,11 @@ def big_title(text, size="32px"):
 info = json.loads(st.secrets["GCP_SERVICE_ACCOUNT"])
 credentials = ee.ServiceAccountCredentials(info['client_email'], key_data=st.secrets["GCP_SERVICE_ACCOUNT"])
 ee.Initialize(credentials, project=info['project_id'])
+
+url = st.secrets["SUPABASE_URL"]
+key = st.secrets["SUPABASE_SERVICE_ROLE_KEY"]
+
+supabase = create_client(url, key)
 
 st.set_page_config(page_title="EcoPlot AI", page_icon="🌱", layout="wide")
 
