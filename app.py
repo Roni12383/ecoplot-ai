@@ -482,7 +482,7 @@ else:
         "risk": st.session_state.eudr_data.get('risk', 'LOW'),
         "compliant": st.session_state.eudr_data.get('compliant', 'YES - EUDR COMPLIANT'),
         "source": st.session_state.eudr_data.get('source', 'Sentinel-2 L2A'),
-        "fetch_time": str(st.session_state.eudr_data.get('fetch_time', dt.utcnow())),
+        "fetch_time": str(st.session_state.eudr_data.get('fetch_time', __import__('datetime').datetime.utcnow())),
         "pdf_hash": pdf_hash,
         "evidence_url": st.session_state.eudr_data.get('evidence_url', f"https://code.earthengine.google.com/?lat={lat}&lon={lon}"),
         "product": st.session_state.eudr_data.get('product', 'Sesame'),
