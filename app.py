@@ -349,7 +349,7 @@ if st.button("Analyze Farm & Generate Report", type="primary"):
 
 
 # Generate hash
-data_string = f"{farm_name}{area}{st.session_state.eudr_data['start_date']}{st.session_state.eudr_data['end_date']}{st.session_state.eudr_data['ndvi_start']}{st.session_state.eudr_data['ndvi_end']}{dt.utcnow().isoformat()}"
+data_string = f"{farm_name}{area}{st.session_state.eudr_data['start_date']}{st.session_state.eudr_data['end_date']}{st.session_state.eudr_data['ndvi_start']}{st.session_state.eudr_data['ndvi_end']}{datetime.utcnow().isoformat()}"
 pdf_hash = hashlib.sha256(data_string.encode()).hexdigest()[:16]
 st.session_state.eudr_data["pdf_hash"] = pdf_hash
 verification_url = f"https://ecoplotai.streamlit.app/verify?plot_id={farm_name}&hash={pdf_hash}&start={st.session_state.eudr_data['start_date']}&end={st.session_state.eudr_data['end_date']}&ndvi_start={st.session_state.eudr_data['ndvi_start']}&ndvi_end={st.session_state.eudr_data['ndvi_end']}"
