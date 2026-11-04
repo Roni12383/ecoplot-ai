@@ -397,7 +397,9 @@ area_safe = str(area) if 'area' in locals() else str(st.session_state.get('area'
 lat_safe = float(metrics['center_coord']['lat']) if 'metrics' in locals() else 12.0
 lon_safe = float(metrics['center_coord']['lon']) if 'metrics' in locals() else 8.0
 
-eudr = st.session_state.get('eudr_data', {})
+eudr = st.session_state.get('eudr_data', {}) or {}
+if not isinstance(eudr, dict):
+    eudr = {}
 start_date = str(eudr.get('start_date', '2020-12-31'))
 end_date = str(eudr.get('end_date', str(_dt.date.today())))
 ndvi_start = eudr.get('ndvi_start', 0.58)
