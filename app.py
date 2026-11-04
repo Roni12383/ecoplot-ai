@@ -349,16 +349,12 @@ if st.button("Analyze Farm & Generate Report", type="primary"):
 
 
 # Generate hash
-# Replace line 352 with safe version - No crash even if eudr_data missing
-if "eudr_data" in st.session_state:
-    data_string = f"{farm_name}{area}{st.session_state.eudr_data['start_date']}{st.session_state.eudr_data['end_date']}{st.session_state.eudr_data['ndvi_start']}{st.session_state.eudr_data['ndvi_end']}{datetime.utcnow().isoformat()}"
-else:
-    data_string = f"{farm_name}{area}2020-12-31{date.today().isoformat()}0.58_0.62_{datetime.utcnow().isoformat()}"
+# Generate hash - FIXED - Works even if datetime import broken
+data_string = f"{farm_name}{area}{st.session_state.eudr_data['start_date']}{st.session_state.eudr_data['end_date']}{st.session_state.eudr_data['ndvi_start']}{st.session_state.eudr_data['ndvi_end']}{__import__('datetime').datetime.utcnow().isoformat()}"
 pdf_hash = hashlib.sha256(data_string.encode()).hexdigest()[:16]
 st.session_state.eudr_data["pdf_hash"] = pdf_hash
 verification_url = f"https://ecoplotai.streamlit.app/verify?plot_id={farm_name}&hash={pdf_hash}&start={st.session_state.eudr_data['start_date']}&end={st.session_state.eudr_data['end_date']}&ndvi_start={st.session_state.eudr_data['ndvi_start']}&ndvi_end={st.session_state.eudr_data['ndvi_end']}"
 st.session_state.eudr_data["verification_url"] = verification_url
-# SAVE TO DB - NEW - Makes verify work for any plot
 import json, os
 db_path = "verification_db.json"
 if os.path.exists(db_path):
