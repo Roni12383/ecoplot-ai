@@ -55,10 +55,40 @@ info = json.loads(st.secrets["GCP_SERVICE_ACCOUNT"])
 credentials = ee.ServiceAccountCredentials(info['client_email'], key_data=st.secrets["GCP_SERVICE_ACCOUNT"])
 ee.Initialize(credentials, project=info['project_id'])
 
-url = st.secrets["SUPABASE_URL"]
-key = st.secrets["SUPABASE_SERVICE_ROLE_KEY"]
+# --- SUPABASE CLIENT - SAFE - No crash if invalid key ---
+supabase = None
+supabase_error = None
+try:
+    from supabase import create_client
+    # Get from secrets - Safe - No crash if missing
+    url = st.secrets.get("SUPABASE_URL", "")
+    key = st.secrets.get("SUPABASE_ANON_KEY", "") or st.secrets.get("SUPABASE_SERVICE_KEY", "")
+    
+    if url and key and url.startswith("https://") and len(key) > 20:
+        try:
+            supabase = create_client(url, key)
+            # Test key - Optional - Don't crash if invalid
+            # supabase.table("eudr_verification").select("plot_id").limit(1).execute()
+        except Exception as e:
+            supabase_error = str(e)
+            supabase = None
+            # Don't crash - Just log - Use file fallback
+            print(f"Supabase invalid - Using file fallback - Error: {e}")
+    else:
+        supabase_error = "Supabase secrets not set or invalid - Using file fallback"
+        supabase = None
+        print("Supabase secrets missing - Using file fallback - verification_db.json")
+except Exception as e:
+    supabase_error = str(e)
+    supabase = None
+    print(f"Supabase import error - Using file fallback - Error: {e}")
 
-supabase = create_client(url, key)
+# Store in session_state for later use
+st.session_state.supabase_client = supabase
+st.session_state.supabase_error = supabase_error
+
+if supabase is None:
+    st.caption(f"ℹ️ Supabase not connected - Using local file verification_db.json - {supabase_error} - Add SUPABASE_URL + SUPABASE_ANON_KEY in Streamlit secrets to enable persistent DB")
 
 st.set_page_config(page_title="EcoPlot AI", page_icon="🌱", layout="wide")
 
