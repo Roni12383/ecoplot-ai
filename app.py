@@ -411,10 +411,18 @@ data_string = f"{farm_name_safe}{area_safe}{start_date}{end_date}{ndvi_start}{nd
 pdf_hash = hashlib.sha256(data_string.encode()).hexdigest()[:16]
 
 # Update session
-st.session_state.eudr_data["pdf_hash"] = pdf_hash
-verification_url = f"https://ecoplotai.streamlit.app/verify?plot_id={farm_name_safe}&hash={pdf_hash}&start={start_date}&end={end_date}&ndvi_start={ndvi_start}&ndvi_end={ndvi_end}"
-st.session_state.eudr_data["verification_url"] = verification_url
+import hashlib
+import time
 
+# Ensure dict
+if "eudr_data" not in st.session_state or not isinstance(st.session_state.get("eudr_data"), dict):
+    st.session_state.eudr_data = {}
+
+pdf_hash = hashlib.sha256(str(time.time()).encode()).hexdigest()[:16]
+verification_url = f"https://ecoplotai.streamlit.app/verify?plot_id={st.session_state.eudr_data.get('farm_name','FARM')}&hash={pdf_hash}"
+
+st.session_state.eudr_data["pdf_hash"] = pdf_hash
+st.session_state.eudr_data["verification_url"] = verification_url
 # Common data dict - Use once
 common_data = {
     "farm_name": farm_name_safe,
