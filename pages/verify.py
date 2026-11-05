@@ -162,16 +162,21 @@ if plot_id and plot_id in verification_db:
     st.divider()
     col_left, col_right = st.columns([2, 1])
     
-    with col_left:
-        st.subheader("📋 EUDR Compliance Details - Supabase Persistent")
-        st.write(f"**Farm:** {data['farm_name']} | **Plot ID:** {data['plot_id']}")
-        st.write(f"**Product:** {data['product']} | **Compliant:** {data['compliant']}")
-        st.write(f"**Location:** {data['center_lat']:.6f}N, {data['center_lon']:.6f}E - Roni LGA, Jigawa")
-        st.write(f"**Period:** {data['start_date']} to {data['end_date']} - Change {data.get('ndvi_change',0):+.3f}")
-        st.write(f"**Forest Cover 2020:** {data['forest_cover']}% | **Source:** {data['source']}")
-        st.write(f"**Fetched:** {data['fetch_time']} | **Generated:** {data['generated_time']}")
-        st.write(f"**Evidence URL:** {data['evidence_url']}")
-        st.map(data={"lat": [data['center_lat']], "lon": [data['center_lon']]}, zoom=14)
+   # --- FIX KeyError line 167 - Safe .get - Works for Supabase + file ---
+# data may be missing farm_name, plot_id, etc. - Use .get with fallback
+
+# Ensure data is dict
+if not isinstance(data, dict):
+    data = {}
+
+farm_name_display = data.get('farm_name') or data.get('plot_id') or data.get('plot_name') or "UNKNOWN FARM"
+plot_id_display = data.get('plot_id') or data.get('farm_name') or farm_name_display
+true_hectare_display = data.get('true_hectare', data.get('area_ha', 'N/A'))
+center_lat_display = data.get('center_lat', data.get('lat', 'N/A'))
+center_lon_display = data.get('center_lon', data.get('lon', 'N/A'))
+
+st.write(f"**Farm:** {farm_name_display} | **Plot ID:** {plot_id_display}")
+st.write(f"**Area:** {true_hectare_display} ha | **Center:** {center_lat_display}, {center_lon_display}")
     
     with col_right:
         st.subheader("🔐 Audit Trail - Hash - Supabase")
