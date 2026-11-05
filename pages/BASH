@@ -1,0 +1,2 @@
+python -m py_compile app.py
+python -m py_compile pages/verify.py
