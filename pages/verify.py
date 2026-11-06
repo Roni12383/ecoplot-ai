@@ -139,58 +139,59 @@ else:
                 "method": "WGS84 TRUE hectare + Sentinel-2 NDVI"
             }
         }
-
 # --- CHECK IF PLOT EXISTS ---
 if plot_id and plot_id in verification_db:
     data = verification_db[plot_id]
-    
+
     if hash_from_qr:
         st.info(f"📱 QR Scanned - Hash from QR: {hash_from_qr} - Auto-verifying")
-    
+
     st.success(f"✅ Plot {plot_id} FOUND - Supabase persistent - {len(verification_db)} plots total - Hash audit active - Works for all reports")
-    
+
+    # Safe data - Never KeyError
+    if not isinstance(data, dict):
+        data = {}
+
+    farm_name_display = data.get('farm_name') or data.get('plot_id') or data.get('plot_name') or "UNKNOWN FARM"
+    plot_id_display = data.get('plot_id') or data.get('farm_name') or farm_name_display
+    true_hectare_display = data.get('true_hectare', data.get('area_ha', 'N/A'))
+    center_lat_display = data.get('center_lat', data.get('lat', 'N/A'))
+    center_lon_display = data.get('center_lon', data.get('lon', 'N/A'))
+
     col1, col2, col3, col4 = st.columns(4)
     with col1:
-        st.metric("TRUE Hectare", f"{data['true_hectare']} ha")
+        st.metric("TRUE Hectare", f"{data.get('true_hectare', 'N/A')} ha")
     with col2:
-        st.metric(f"NDVI {data['start_date']}", f"{data['ndvi_start']:.3f}")
+        st.metric(f"NDVI {data.get('start_date', 'N/A')}", f"{float(data.get('ndvi_start', 0)):.3f}")
     with col3:
-        st.metric(f"NDVI {data['end_date']}", f"{data['ndvi_end']:.3f}")
+        st.metric(f"NDVI {data.get('end_date', 'N/A')}", f"{float(data.get('ndvi_end', 0)):.3f}")
     with col4:
-        st.metric("EUDR Risk", data['risk'])
-    
+        st.metric("EUDR Risk", data.get('risk', 'LOW'))
+
     st.divider()
+
     col_left, col_right = st.columns([2, 1])
-    
-# --- FIX KeyError line 167 - Safe .get - Works for Supabase + file ---
-# data may be missing farm_name, plot_id, etc. - Use .get with fallback
 
-# Ensure data is dict
-if not isinstance(data, dict):
-    data = {}
+    with col_left:
+        st.write(f"**Farm:** {farm_name_display} | **Plot ID:** {plot_id_display}")
+        st.write(f"**Area:** {true_hectare_display} ha | **Center:** {center_lat_display}, {center_lon_display}")
+        st.write(f"**Product:** {data.get('product', 'Sesame')}")
+        st.write(f"**Dates:** {data.get('start_date', 'N/A')} to {data.get('end_date', 'N/A')}")
+        st.write(f"**Compliant:** {data.get('compliant', 'YES - EUDR COMPLIANT')}")
+        st.write(f"**Source:** {data.get('source', 'Sentinel-2 L2A')}")
 
-farm_name_display = data.get('farm_name') or data.get('plot_id') or data.get('plot_name') or "UNKNOWN FARM"
-plot_id_display = data.get('plot_id') or data.get('farm_name') or farm_name_display
-true_hectare_display = data.get('true_hectare', data.get('area_ha', 'N/A'))
-center_lat_display = data.get('center_lat', data.get('lat', 'N/A'))
-center_lon_display = data.get('center_lon', data.get('lon', 'N/A'))
-
-st.write(f"**Farm:** {farm_name_display} | **Plot ID:** {plot_id_display}")
-st.write(f"**Area:** {true_hectare_display} ha | **Center:** {center_lat_display}, {center_lon_display}")
-
-    
     with col_right:
         st.subheader("🔐 Audit Trail - Hash - Supabase")
-        st.code(f"SHA256:{data['pdf_hash']}", language="text")
-        st.write(f"**Verification URL:** {data['verification_url']}")
+        st.code(f"SHA256:{data.get('pdf_hash', 'N/A')}", language="text")
+        st.write(f"**Verification URL:** {data.get('verification_url', 'N/A')}")
         st.info("Hash in PDF footer must match this Supabase DB hash - Persistent - Cannot be lost")
-        
         if supabase_client:
             st.success("✅ Supabase connected - Persistent - No file upload needed - Works for unlimited reports")
         else:
             st.warning("⚠️ File fallback - Add Supabase secrets for persistence - File will be lost on reboot")
-    
+
     # --- HASH VERIFICATION - WORKS FOR ANY PLOT - SUPABASE PERSISTENT ---
+-
     st.divider()
     st.header("🔍 TEST HASH AUDIT - Supabase Persistent - Works for ANY Report - Unlimited")
     
