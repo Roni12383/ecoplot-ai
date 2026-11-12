@@ -8,6 +8,7 @@ shapely
 fpdf2
 earthengine-api
 openai
-supabase==2.7.0
+supabase>=2.10.0
+postgrest>=1.0.0
 
 
