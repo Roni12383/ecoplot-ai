@@ -55,24 +55,32 @@ info = json.loads(st.secrets["GCP_SERVICE_ACCOUNT"])
 credentials = ee.ServiceAccountCredentials(info['client_email'], key_data=st.secrets["GCP_SERVICE_ACCOUNT"])
 ee.Initialize(credentials, project=info['project_id'])
 
-# --- SUPABASE CLIENT - SAFE - No crash if invalid key ---
+# --- SUPABASE CLIENT - NEW KEYS - sb_secret_ / sb_publishable_ ---
 supabase = None
 supabase_error = None
 try:
     from supabase import create_client
-    # Get from secrets - Safe - No crash if missing
+
+    # NEW: SUPABASE_KEY = sb_secret_... | OLD: SUPABASE_ANON_KEY = eyJ...
+    # Streamlit Secrets must have SUPABASE_URL + SUPABASE_KEY
     url = st.secrets.get("SUPABASE_URL", "")
-    key = st.secrets.get("SUPABASE_ANON_KEY", "") or st.secrets.get("SUPABASE_SERVICE_KEY", "")
-    
+    key = (
+        st.secrets.get("SUPABASE_KEY", "")
+        or st.secrets.get("SUPABASE_ANON_KEY", "")
+        or st.secrets.get("SUPABASE_SERVICE_KEY", "")
+        or st.secrets.get("SUPABASE_PUBLISHABLE_KEY", "")
+    )
+    key = str(key).strip()
+    url = str(url).strip()
+
     if url and key and url.startswith("https://") and len(key) > 20:
         try:
             supabase = create_client(url, key)
-            # Test key - Optional - Don't crash if invalid
-            # supabase.table("eudr_verification").select("plot_id").limit(1).execute()
+            # Test key - Will fail fast if Invalid API key
+            supabase.table("verification_db").select("plot_id").limit(1).execute()
         except Exception as e:
             supabase_error = str(e)
             supabase = None
-            # Don't crash - Just log - Use file fallback
             print(f"Supabase invalid - Using file fallback - Error: {e}")
     else:
         supabase_error = "Supabase secrets not set or invalid - Using file fallback"
@@ -88,7 +96,10 @@ st.session_state.supabase_client = supabase
 st.session_state.supabase_error = supabase_error
 
 if supabase is None:
-    st.caption(f"ℹ️ Supabase not connected - Using local file verification_db.json - {supabase_error} - Add SUPABASE_URL + SUPABASE_ANON_KEY in Streamlit secrets to enable persistent DB")
+    st.caption(f"ℹ️ Supabase not connected - Using local file verification_db.json - {supabase_error} - Add SUPABASE_URL + SUPABASE_KEY (sb_secret_...) in Streamlit secrets to enable persistent DB")
+else:
+    st.caption("✅ Supabase connected - Persistent DB")
+
 
 st.set_page_config(page_title="EcoPlot AI", page_icon="🌱", layout="wide")
 
