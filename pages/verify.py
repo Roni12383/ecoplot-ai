@@ -1,8 +1,9 @@
 import streamlit as st
 import hashlib
 from datetime import datetime
-import json
 import os
+import json
+
 
 # Try import supabase - If not available, fallback to file
 try:
@@ -35,21 +36,25 @@ if not plot_id:
 else:
     st.title(f"✅ Verification: {plot_id} - EUDR V2 DDS-Ready - Supabase")
 
-# --- LOAD FROM SUPABASE - PERSISTENT - NOT FILE - WORKS FOR ALL REPORTS ---
+# --- LOAD FROM SUPABASE - NEW KEYS - sb_secret_ / sb_publishable_ ---
 verification_db = {}
 supabase_client = None
 
-# Try Supabase first - Persistent
 if SUPABASE_AVAILABLE:
     try:
-        supabase_url = st.secrets.get("SUPABASE_URL", "")
-        supabase_anon_key = st.secrets.get("SUPABASE_ANON_KEY", "")
-        
-        if supabase_url and supabase_anon_key:
-            supabase_client = create_client(supabase_url, supabase_anon_key)
+        supabase_url = str(st.secrets.get("SUPABASE_URL", "")).strip()
+        supabase_key = str(
+            st.secrets.get("SUPABASE_KEY", "")
+            or st.secrets.get("SUPABASE_ANON_KEY", "")
+            or st.secrets.get("SUPABASE_SERVICE_KEY", "")
+            or st.secrets.get("SUPABASE_PUBLISHABLE_KEY", "")
+        ).strip()
+
+        if supabase_url and supabase_key:
+            supabase_client = create_client(supabase_url, supabase_key)
             st.caption(f"Connected to Supabase - Persistent DB - {supabase_url}")
         else:
-            st.warning("Supabase secrets not found - Add SUPABASE_URL and SUPABASE_ANON_KEY to secrets - Using file fallback")
+            st.warning("Supabase secrets not found - Add SUPABASE_URL and SUPABASE_KEY (sb_secret_...) to secrets - Using file fallback")
             supabase_client = None
     except Exception as e:
         st.warning(f"Supabase connection error: {e} - Using file fallback")
@@ -65,7 +70,7 @@ def load_from_supabase(plot_id_to_load=None):
     try:
         if plot_id_to_load:
             # Load specific plot
-            response = supabase_client.table("eudr_verification").select("*").eq("plot_id", plot_id_to_load).execute()
+            response = supabase_client.table("verification_db").select("*").eq("plot_id", plot_id_to_load).execute()
             if response.data and len(response.data) > 0:
                 data = response.data[0]
                 return data, {data['plot_id']: data}
@@ -73,7 +78,7 @@ def load_from_supabase(plot_id_to_load=None):
                 return None, {}
         else:
             # Load all plots
-            response = supabase_client.table("eudr_verification").select("*").order("created_at", desc=True).limit(100).execute()
+            response = supabase_client.table("verification_db").select("*").order("created_at", desc=True).limit(100).execute()
             db = {}
             for row in response.data:
                 db[row['plot_id']] = row
