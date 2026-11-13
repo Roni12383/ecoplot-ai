@@ -77,7 +77,7 @@ try:
         try:
             supabase = create_client(url, key)
             # Test key - Will fail fast if Invalid API key
-            supabase.table("verification_db").select("plot_id").limit(1).execute()
+            supabase.table("eudr_verification").select("plot_id").limit(1).execute()
         except Exception as e:
             supabase_error = str(e)
             supabase = None
@@ -85,7 +85,7 @@ try:
     else:
         supabase_error = "Supabase secrets not set or invalid - Using file fallback"
         supabase = None
-        print("Supabase secrets missing - Using file fallback - verification_db.json")
+        print("Supabase secrets missing - Using file fallback - eudr_verification.json")
 except Exception as e:
     supabase_error = str(e)
     supabase = None
@@ -96,7 +96,7 @@ st.session_state.supabase_client = supabase
 st.session_state.supabase_error = supabase_error
 
 if supabase is None:
-    st.caption(f"ℹ️ Supabase not connected - Using local file verification_db.json - {supabase_error} - Add SUPABASE_URL + SUPABASE_KEY (sb_secret_...) in Streamlit secrets to enable persistent DB")
+    st.caption(f"ℹ️ Supabase not connected - Using local fileeudr_verification .json - {supabase_error} - Add SUPABASE_URL + SUPABASE_KEY (sb_secret_...) in Streamlit secrets to enable persistent DB")
 else:
     st.caption("✅ Supabase connected - Persistent DB")
 
