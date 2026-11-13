@@ -37,7 +37,7 @@ else:
     st.title(f"✅ Verification: {plot_id} - EUDR V2 DDS-Ready - Supabase")
 
 # --- LOAD FROM SUPABASE - NEW KEYS - sb_secret_ / sb_publishable_ ---
-verification_db = {}
+eudr_verification = {}
 supabase_client = None
 
 if SUPABASE_AVAILABLE:
@@ -70,7 +70,7 @@ def load_from_supabase(plot_id_to_load=None):
     try:
         if plot_id_to_load:
             # Load specific plot
-            response = supabase_client.table("verification_db").select("*").eq("plot_id", plot_id_to_load).execute()
+            response = supabase_client.table("eudr_verification").select("*").eq("plot_id", plot_id_to_load).execute()
             if response.data and len(response.data) > 0:
                 data = response.data[0]
                 return data, {data['plot_id']: data}
@@ -78,7 +78,7 @@ def load_from_supabase(plot_id_to_load=None):
                 return None, {}
         else:
             # Load all plots
-            response = supabase_client.table("verification_db").select("*").order("created_at", desc=True).limit(100).execute()
+            response = supabase_client.table("eudr_verification").select("*").order("created_at", desc=True).limit(100).execute()
             db = {}
             for row in response.data:
                 db[row['plot_id']] = row
@@ -105,20 +105,20 @@ if supabase_client:
     if plot_id:
         single_data, all_db = load_from_supabase(plot_id)
         if single_data:
-            verification_db = {plot_id: single_data}
+            eudr_verification = {plot_id: single_data}
         else:
             # Plot not found in Supabase - Load all to show list
             _, all_db = load_from_supabase()
-            verification_db = all_db
+            eudr_verification = all_db
     else:
         # No plot_id - Load all
-        _, verification_db = load_from_supabase()
+        _, eudr_verification = load_from_supabase()
 else:
     # Fallback to file
-    verification_db = load_from_file()
-    if not verification_db:
+    eudr_verification = load_from_file()
+    if not eudr_verification:
         # Mock data if file also not exists
-        verification_db = {
+        eudr_verification = {
             "JGW-RONI-012": {
                 "plot_id": "JGW-RONI-012",
                 "farm_name": "Musa Garba - JGW-RONI-012",
@@ -146,13 +146,13 @@ else:
         }
 
 # --- CHECK IF PLOT EXISTS ---
-if plot_id and plot_id in verification_db:
-    data = verification_db[plot_id]
+if plot_id and plot_id in eudr_verification:
+    data = eudr_verification[plot_id]
     
     if hash_from_qr:
         st.info(f"📱 QR Scanned - Hash from QR: {hash_from_qr} - Auto-verifying")
     
-    st.success(f"✅ Plot {plot_id} FOUND - Supabase persistent - {len(verification_db)} plots total - Hash audit active - Works for all reports")
+    st.success(f"✅ Plot {plot_id} FOUND - Supabase persistent - {len(eudr_verification)} plots total - Hash audit active - Works for all reports")
     
     col1, col2, col3, col4 = st.columns(4)
     with col1:
@@ -227,8 +227,8 @@ if plot_id and plot_id in verification_db:
     
     with col_test2:
         st.subheader("All Plots in Supabase DB - Persistent")
-        st.write(f"Total: {len(verification_db)} plots - Supabase persistent - No file upload")
-        for pid, pdata in verification_db.items():
+        st.write(f"Total: {len(eudr_verification)} plots - Supabase persistent - No file upload")
+        for pid, pdata in eudr_verification.items():
             if st.button(f"{pid} - {pdata['pdf_hash'][:8]}... - {pdata['true_hectare']}ha", key=f"supa_{pid}"):
                 st.query_params["plot_id"] = pid
                 st.query_params["hash"] = pdata['pdf_hash']
@@ -236,13 +236,13 @@ if plot_id and plot_id in verification_db:
         
         # Show raw data for debugging
         with st.expander("Show raw Supabase data - All plots"):
-            st.json(verification_db)
+            st.json(eudr_verification)
 
 elif plot_id:
     st.error(f"❌ Plot ID '{plot_id}' NOT FOUND in Supabase DB")
-    st.write(f"Supabase has {len(verification_db)} plots:")
-    for pid in verification_db.keys():
-        st.write(f"- {pid} - {verification_db[pid]['pdf_hash'][:8]}... - {verification_db[pid]['true_hectare']}ha")
+    st.write(f"Supabase has {len(eudr_verification)} plots:")
+    for pid in eudr_verification.keys():
+        st.write(f"- {pid} - {eudr_verification[pid]['pdf_hash'][:8]}... - {eudr_verification[pid]['true_hectare']}ha")
     
     st.divider()
     st.info("Fix: Generate report in main app - App will save to Supabase automatically - Then verify here works immediately - No file upload needed")
@@ -254,5 +254,5 @@ elif plot_id:
 
 else:
     st.info("Enter Plot ID to verify - Or scan QR from PDF - Supabase persistent DB works for all reports")
-    st.write(f"Available in Supabase: {len(verification_db)} plots")
-    st.json(verification_db)
+    st.write(f"Available in Supabase: {len(eudr_verification)} plots")
+    st.json(eudr_verification)
