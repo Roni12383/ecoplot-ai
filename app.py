@@ -394,20 +394,19 @@ if st.button("Analyze Farm & Generate Report", type="primary"):
                 "consent": True
             }
 
-# --- GENERATE HASH + SAVE - FIXED - No TypeError - No dt - No datetime.utcnow ---
+
+# --- GENERATE HASH + SAVE - FIXED - ONE HASH ONLY ---
 import time
 import hashlib
 import json
 import os
-# Safe datetime - Never NameError - No import conflict
 import datetime as _dt
 
-# Safe values - No crash if variables missing
+# Safe values
 farm_name_safe = str(farm_name) if 'farm_name' in locals() else st.session_state.get('farm_name', 'UNKNOWN_FARM')
 area_safe = str(area) if 'area' in locals() else str(st.session_state.get('area', '0'))
 lat_safe = float(metrics['center_coord']['lat']) if 'metrics' in locals() else 12.0
 lon_safe = float(metrics['center_coord']['lon']) if 'metrics' in locals() else 8.0
-
 eudr = st.session_state.get('eudr_data', {}) or {}
 if not isinstance(eudr, dict):
     eudr = {}
@@ -416,30 +415,24 @@ end_date = str(eudr.get('end_date', str(_dt.date.today())))
 ndvi_start = eudr.get('ndvi_start', 0.58)
 ndvi_end = eudr.get('ndvi_end', 0.62)
 
-# Hash - Use time.time() - Never TypeError
-timestamp = str(time.time())
-data_string = f"{farm_name_safe}{area_safe}{start_date}{end_date}{ndvi_start}{ndvi_end}{timestamp}"
-pdf_hash = hashlib.sha256(data_string.encode()).hexdigest()[:16]
+# === FIX: ONE HASH, NO TIMESTAMP, NO SECOND CALCULATION ===
+# Do NOT use time.time() in hash - it makes hash change every time
+canonical_string = f"{farm_name_safe}|{area_safe}|{start_date}|{end_date}|{ndvi_start}|{ndvi_end}|{lat_safe}|{lon_safe}"
+pdf_hash = hashlib.sha256(canonical_string.encode('utf-8')).hexdigest()[:16]
 
-# Update session
-import hashlib
-import time
-
-# Ensure dict
+# Save ONCE to session - PDF, Supabase, Verify all read from HERE
 if "eudr_data" not in st.session_state or not isinstance(st.session_state.get("eudr_data"), dict):
     st.session_state.eudr_data = {}
-
-pdf_hash = hashlib.sha256(str(time.time()).encode()).hexdigest()[:16]
-verification_url = f"https://ecoplotai.streamlit.app/verify?plot_id={st.session_state.eudr_data.get('farm_name','FARM')}&hash={pdf_hash}"
-
 st.session_state.eudr_data["pdf_hash"] = pdf_hash
+verification_url = f"https://ecoplotai.streamlit.app/verify?plot_id={farm_name_safe}&hash={pdf_hash}"
 st.session_state.eudr_data["verification_url"] = verification_url
+
 # Common data dict - Use once
 common_data = {
     "farm_name": farm_name_safe,
     "true_hectare": float(metrics['area_ha']) if 'metrics' in locals() else 0.0,
-    "center_lat": float(metrics['center_coord']['lat']) if 'metrics' in locals() else lat_safe,
-    "center_lon": float(metrics['center_coord']['lon']) if 'metrics' in locals() else lon_safe,
+    "center_lat": lat_safe,
+    "center_lon": lon_safe,
     "start_date": start_date,
     "end_date": end_date,
     "ndvi_start": float(ndvi_start),
@@ -450,7 +443,7 @@ common_data = {
     "compliant": eudr.get('compliant', 'YES - EUDR COMPLIANT'),
     "source": eudr.get('source', 'Sentinel-2 L2A'),
     "fetch_time": str(eudr.get('fetch_time', _dt.datetime.now())),
-    "pdf_hash": pdf_hash,
+    "pdf_hash": pdf_hash,  # SAME HASH
     "evidence_url": eudr.get('evidence_url', f"https://code.earthengine.google.com/?lat={lat_safe}&lon={lon_safe}"),
     "product": eudr.get('product', 'Sesame'),
     "generated_time": _dt.datetime.now().isoformat(),
@@ -459,7 +452,7 @@ common_data = {
     "method": "WGS84 TRUE hectare + Sentinel-2 NDVI"
 }
 
-# 1. File save - Always works - No secrets needed
+# 1. File save
 db_path = "verification_db.json"
 verification_db = {}
 if os.path.exists(db_path):
@@ -472,9 +465,8 @@ verification_db[farm_name_safe] = common_data
 with open(db_path, 'w') as f:
     json.dump(verification_db, f, indent=2)
 st.session_state.verification_db = verification_db
-st.success(f"Saved to DB - Plot {farm_name_safe} - {len(verification_db)} total")
 
-# 2. Supabase save - Only if secrets valid - Safe - No crash
+# 2. Supabase save - SAME pdf_hash
 try:
     supabase_client = st.session_state.get('supabase_client', None)
     if supabase_client is not None:
@@ -494,21 +486,21 @@ try:
             "compliant": common_data["compliant"],
             "source": common_data["source"],
             "fetch_time": common_data["fetch_time"],
-            "pdf_hash": common_data["pdf_hash"],
+            "pdf_hash": pdf_hash,  # SAME HASH - DO NOT RECOMPUTE
             "evidence_url": common_data["evidence_url"],
             "product": common_data["product"],
             "generated_time": common_data["generated_time"],
             "server": "EcoPlotAI Server v2.1 - Roni LGA, Nigeria",
-            "verification_url": common_data["verification_url"],
+            "verification_url": verification_url,
             "method": common_data["method"]
         }
         supabase_client.table("eudr_verification").upsert(supabase_row, on_conflict="plot_id").execute()
-        st.success(f"✅ Saved to Supabase - Persistent - Plot {farm_name_safe} - Hash {pdf_hash}")
+        st.success(f"✅ Saved to Supabase - Hash {pdf_hash}")
         st.caption(f"Verify: {verification_url}")
 except Exception as e:
     st.warning(f"Supabase not connected - Using file - Reason: {e}")
 
-# 3. Create PDF
+# 3. Create PDF - PDF MUST use pdf_hash from session, NOT recompute
 if 'create_pdf_report' in locals() or 'create_pdf_report' in globals():
     st.session_state.pdf_report = create_pdf_report(
         farm_name=farm_name_safe,
@@ -516,12 +508,6 @@ if 'create_pdf_report' in locals() or 'create_pdf_report' in globals():
         report_type=report_type if 'report_type' in locals() else "EUDR V2 DDS-Ready",
         eudr_data=st.session_state.eudr_data
     )
-    if st.session_state.get('ndvi_time_series_df') is None and 'get_ndvi_time_series' in locals():
-        try:
-            st.session_state.ndvi_time_series_df = get_ndvi_time_series(lat_safe, lon_safe)
-        except:
-            pass
-
 if st.session_state.get('pdf_report') is not None:
     file_name = f"EUDR_V2_{farm_name_safe}_{_dt.datetime.now().strftime('%Y%m%d')}.pdf"
     st.download_button(
@@ -531,6 +517,7 @@ if st.session_state.get('pdf_report') is not None:
         mime="application/pdf"
     )
     st.caption(f"**Audit:** Hash {pdf_hash} | Fetched {common_data['fetch_time']} | Source {common_data['source']} | Dates {start_date} to {end_date} | No manual edit")
+
 
 
 
