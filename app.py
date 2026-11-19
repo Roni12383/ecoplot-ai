@@ -138,13 +138,17 @@ if user_input:
         answer = ask_xeelaa(user_input)
         big_text(answer, "20px")
 
-# --- SIDEBAR WITH DYNAMIC HECTARE ---
+# --- SIDEBAR WITH DYNAMIC HECTARE - FIXED ---
+import tempfile, zipfile, os, json
+import geopandas as gpd
+
 st.sidebar.header("Farm Input Data")
-input_method = st.sidebar.radio("Boundary Input Type", ["Single Point (Lat/Lon)", "Enter Coordinates List", "Upload Shapefile.zip"])
-farm_name = st.sidebar.text_input("Farm Name", "EcoPlot Project")
+input_method = st.sidebar.radio("Boundary Input Type", ["Single Point (Lat/Lon)", "Enter Coordinates List", "Upload Shapefile.zip", "Upload CSV 4-Point"])
+
+farm_name = st.sidebar.text_input("Farm Name", "RONI-001")
 soil_carbon = st.sidebar.slider("Current Soil Carbon (%)", 0.1, 5.0, 1.2)
-lat = st.sidebar.number_input("Latitude", value=12.0022, format="%.4f")
-lon = st.sidebar.number_input("Longitude", value=8.5920, format="%.4f")
+lat = st.sidebar.number_input("Latitude", value=12.5365, format="%.4f")
+lon = st.sidebar.number_input("Longitude", value=8.5123, format="%.4f")
 
 # DYNAMIC HECTARE INPUT
 area_input = st.sidebar.number_input("Hectares for Analysis", value=1.0, min_value=0.1, max_value=1000.0, step=0.5)
@@ -153,36 +157,92 @@ st.sidebar.caption(f"Will generate exactly {area_input} ha")
 custom_geojson = None
 final_area_ha = area_input
 
+# --- 1. ENTER COORDINATES LIST - FIXED FOR RONI-001 ---
 if input_method == "Enter Coordinates List":
-    st.sidebar.info("Paste lon,lat per line")
-    coords_text = st.sidebar.text_area("Coordinates", "8.432, 11.051\n8.435, 11.051\n8.435, 11.048\n8.432, 11.048")
+    st.sidebar.info("Paste lon,lat per line - Example for RONI-001:")
+    coords_text = st.sidebar.text_area("Coordinates", "8.5121620,12.5366347\n8.5124380,12.5366347\n8.5124380,12.5363653\n8.5121620,12.5363653")
     try:
         coords = []
         for line in coords_text.strip().split('\n'):
-            if ',' in line:
-                lon_c, lat_c = map(float, line.split(','))
-                coords.append([lon_c, lat_c])
-        if coords and coords[0]!= coords[-1]:
+            line = line.strip()
+            if not line or ',' not in line:
+                continue
+            parts = line.split(',')
+            # Support both "lon,lat" and "lon, lat" with spaces
+            lon_c, lat_c = float(parts[0].strip()), float(parts[1].strip())
+            coords.append([lon_c, lat_c])
+        if coords and coords[0] != coords[-1]:
             coords.append(coords[0])
         if len(coords) >= 4:
             custom_geojson = {"type": "Polygon", "coordinates": [coords]}
             final_area_ha = calculate_true_hectares(custom_geojson)
-            st.sidebar.success(f"Polygon Area: {final_area_ha:.3f} ha (calculated)")
+            st.sidebar.success(f"Polygon Area: {final_area_ha:.4f} ha (calculated)")
+            # Update center lat/lon automatically
+            lats = [c[1] for c in coords]
+            lons = [c[0] for c in coords]
+            lat = sum(lats)/len(lats)
+            lon = sum(lons)/len(lons)
+        else:
+            st.sidebar.warning("Need at least 4 points (3 + closing)")
     except Exception as e:
-        st.sidebar.error(f"Error: {e}")
+        st.sidebar.error(f"Error: {e} - Use format: lon,lat per line")
 
+# --- 2. UPLOAD SHAPEFILE.ZIP - FIXED - FINDS .shp IN SUBFOLDER ---
 elif input_method == "Upload Shapefile.zip":
-    uploaded_zip = st.sidebar.file_uploader("Upload ZIP with.shp.shx.dbf.prj", type=['zip'])
+    uploaded_zip = st.sidebar.file_uploader("Upload ZIP with .shp .shx .dbf .prj", type=['zip'])
     if uploaded_zip:
-        with tempfile.TemporaryDirectory() as tmpdir:
-            with zipfile.ZipFile(uploaded_zip, 'r') as zip_ref:
-                zip_ref.extractall(tmpdir)
-            shp_files = [os.path.join(tmpdir, f) for f in os.listdir(tmpdir) if f.endswith('.shp')]
-            if shp_files:
-                gdf = gpd.read_file(shp_files[0]).to_crs(epsg=4326)
-                custom_geojson = json.loads(gdf.to_json())['features'][0]['geometry']
-                final_area_ha = calculate_true_hectares(custom_geojson)
-                st.sidebar.success(f"Shapefile: {final_area_ha:.3f} ha")
+        try:
+            with tempfile.TemporaryDirectory() as tmpdir:
+                with zipfile.ZipFile(uploaded_zip, 'r') as zip_ref:
+                    zip_ref.extractall(tmpdir)
+                # FIX: Search recursively, not just top folder, case-insensitive
+                shp_files = []
+                for root, dirs, files in os.walk(tmpdir):
+                    for f in files:
+                        if f.lower().endswith('.shp'):
+                            shp_files.append(os.path.join(root, f))
+                if not shp_files:
+                    st.sidebar.error("No .shp found in ZIP. ZIP must contain .shp + .shx + .dbf + .prj")
+                else:
+                    gdf = gpd.read_file(shp_files[0]).to_crs(epsg=4326)
+                    custom_geojson = json.loads(gdf.to_json())['features'][0]['geometry']
+                    final_area_ha = calculate_true_hectares(custom_geojson)
+                    st.sidebar.success(f"Shapefile: {final_area_ha:.4f} ha - {len(gdf)} plot(s)")
+                    # Update farm_name from shapefile if available
+                    if 'Plot_ID' in gdf.columns:
+                        farm_name = str(gdf.iloc[0]['Plot_ID'])
+        except Exception as e:
+            st.sidebar.error(f"Shapefile error: {e}")
+            st.sidebar.info("Tip: ZIP must contain all 4 files. Don't upload .shp alone.")
+
+# --- 3. UPLOAD CSV 4-POINT - NEW - FOR RONI-001.csv ---
+elif input_method == "Upload CSV 4-Point":
+    uploaded_csv = st.sidebar.file_uploader("Upload RONI-001.csv", type=['csv'])
+    if uploaded_csv:
+        try:
+            import pandas as pd
+            from shapely.geometry import Polygon
+            df = pd.read_csv(uploaded_csv)
+            df.columns = [c.strip() for c in df.columns]
+            # Find lon/lat columns - works with Longitude_X / Latitude_Y OR lon / lat
+            lon_col = [c for c in df.columns if 'lon' in c.lower() or c.lower().endswith('_x')][0]
+            lat_col = [c for c in df.columns if 'lat' in c.lower() or c.lower().endswith('_y')][0]
+            coords = list(zip(df[lon_col].astype(float), df[lat_col].astype(float)))
+            if coords[0] != coords[-1]:
+                coords.append(coords[0])
+            # Convert to list format for GeoJSON
+            coords_list = [[float(x), float(y)] for x, y in coords]
+            custom_geojson = {"type": "Polygon", "coordinates": [coords_list]}
+            final_area_ha = calculate_true_hectares(custom_geojson)
+            st.sidebar.success(f"CSV: {final_area_ha:.4f} ha - Plot {df['Plot_ID'].iloc[0] if 'Plot_ID' in df.columns else farm_name}")
+            if 'Plot_ID' in df.columns:
+                farm_name = str(df['Plot_ID'].iloc[0])
+            # Update center
+            lat = sum([c[1] for c in coords_list])/len(coords_list)
+            lon = sum([c[0] for c in coords_list])/len(coords_list)
+        except Exception as e:
+            st.sidebar.error(f"CSV error: {e}")
+
 
 # --- GET METRICS WITH CORRECT HECTARE ---
 with st.spinner("Calculating metrics..."):
