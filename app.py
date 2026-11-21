@@ -457,9 +457,7 @@ pdf_hash = hashlib.sha256(canonical_string.encode('utf-8')).hexdigest()[:16]
 if "eudr_data" not in st.session_state or not isinstance(st.session_state.get("eudr_data"), dict):
     st.session_state.eudr_data = {}
 st.session_state.eudr_data["pdf_hash"] = pdf_hash
-verification_url = f"https://ecoplotai.streamlit.app/verify?plot_id={farm_name_safe}&hash={pdf_hash}"
-st.session_state.eudr_data["verification_url"] = verification_url
-
+verification_url = f"https://ecoplotai.streamlit.app/verify?plot_id={str(farm_name_safe).strip().upper()}&hash={pdf_hash}"
 # Common data dict - Use once
 common_data = {
     "farm_name": farm_name_safe,
