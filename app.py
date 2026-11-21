@@ -215,33 +215,6 @@ elif input_method == "Upload Shapefile.zip":
             st.sidebar.error(f"Shapefile error: {e}")
             st.sidebar.info("Tip: ZIP must contain all 4 files. Don't upload .shp alone.")
 
-# --- 3. UPLOAD CSV 4-POINT - NEW - FOR RONI-001.csv ---
-elif input_method == "Upload CSV 4-Point":
-    uploaded_csv = st.sidebar.file_uploader("Upload RONI-001.csv", type=['csv'])
-    if uploaded_csv:
-        try:
-            import pandas as pd
-            from shapely.geometry import Polygon
-            df = pd.read_csv(uploaded_csv)
-            df.columns = [c.strip() for c in df.columns]
-            # Find lon/lat columns - works with Longitude_X / Latitude_Y OR lon / lat
-            lon_col = [c for c in df.columns if 'lon' in c.lower() or c.lower().endswith('_x')][0]
-            lat_col = [c for c in df.columns if 'lat' in c.lower() or c.lower().endswith('_y')][0]
-            coords = list(zip(df[lon_col].astype(float), df[lat_col].astype(float)))
-            if coords[0] != coords[-1]:
-                coords.append(coords[0])
-            # Convert to list format for GeoJSON
-            coords_list = [[float(x), float(y)] for x, y in coords]
-            custom_geojson = {"type": "Polygon", "coordinates": [coords_list]}
-            final_area_ha = calculate_true_hectares(custom_geojson)
-            st.sidebar.success(f"CSV: {final_area_ha:.4f} ha - Plot {df['Plot_ID'].iloc[0] if 'Plot_ID' in df.columns else farm_name}")
-            if 'Plot_ID' in df.columns:
-                farm_name = str(df['Plot_ID'].iloc[0])
-            # Update center
-            lat = sum([c[1] for c in coords_list])/len(coords_list)
-            lon = sum([c[0] for c in coords_list])/len(coords_list)
-        except Exception as e:
-            st.sidebar.error(f"CSV error: {e}")
 
 
 # --- GET METRICS WITH CORRECT HECTARE ---
