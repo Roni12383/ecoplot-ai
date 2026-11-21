@@ -215,6 +215,8 @@ elif input_method == "Upload Shapefile.zip":
             st.sidebar.error(f"Shapefile error: {e}")
             st.sidebar.info("Tip: ZIP must contain all 4 files. Don't upload .shp alone.")
 
+farm_name = str(gdf.iloc[0]['Plot_ID']).strip().upper()
+
 
 
 # --- GET METRICS WITH CORRECT HECTARE ---
