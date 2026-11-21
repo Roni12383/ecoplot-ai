@@ -188,6 +188,8 @@ if input_method == "Enter Coordinates List":
         st.sidebar.error(f"Error: {e} - Use format: lon,lat per line")
 
 # --- 2. UPLOAD SHAPEFILE.ZIP - FIXED - FINDS .shp IN SUBFOLDER ---
+
+
 elif input_method == "Upload Shapefile.zip":
     uploaded_zip = st.sidebar.file_uploader("Upload ZIP with .shp .shx .dbf .prj", type=['zip'])
     if uploaded_zip:
@@ -195,29 +197,38 @@ elif input_method == "Upload Shapefile.zip":
             with tempfile.TemporaryDirectory() as tmpdir:
                 with zipfile.ZipFile(uploaded_zip, 'r') as zip_ref:
                     zip_ref.extractall(tmpdir)
-                # FIX: Search recursively, not just top folder, case-insensitive
+                # Search recursively
                 shp_files = []
                 for root, dirs, files in os.walk(tmpdir):
                     for f in files:
                         if f.lower().endswith('.shp'):
                             shp_files.append(os.path.join(root, f))
+                
                 if not shp_files:
-                    st.sidebar.error("No .shp found in ZIP. ZIP must contain .shp + .shx + .dbf + .prj")
+                    st.sidebar.error("No .shp found in ZIP")
                 else:
                     gdf = gpd.read_file(shp_files[0]).to_crs(epsg=4326)
                     custom_geojson = json.loads(gdf.to_json())['features'][0]['geometry']
                     final_area_ha = calculate_true_hectares(custom_geojson)
                     st.sidebar.success(f"Shapefile: {final_area_ha:.4f} ha - {len(gdf)} plot(s)")
-                    # Update farm_name from shapefile if available
-                    if 'Plot_ID' in gdf.columns:
-                        farm_name = str(gdf.iloc[0]['Plot_ID'])
+                    
+                    # --- FIXED LINE 218 - INSIDE with / if, SAFE ---
+                    # Show what columns your shapefile actually has
+                    st.sidebar.write(f"Shapefile columns: {list(gdf.columns)}")
+                    plot_col = None
+                    for col in gdf.columns:
+                        if str(col).strip().lower() in ['plot_id', 'plotid', 'plot', 'farm_name', 'farm', 'name', 'id']:
+                            plot_col = col
+                            break
+                    if plot_col:
+                        farm_name = str(gdf.iloc[0][plot_col]).strip().upper()
+                        st.sidebar.success(f"Plot ID from Shapefile: {farm_name}")
+                    else:
+                        st.sidebar.warning(f"No Plot_ID column found. Using: {farm_name}")
+                        farm_name = str(farm_name).strip().upper()
+                    # --- END FIX ---
         except Exception as e:
             st.sidebar.error(f"Shapefile error: {e}")
-            st.sidebar.info("Tip: ZIP must contain all 4 files. Don't upload .shp alone.")
-
-farm_name = str(gdf.iloc[0]['Plot_ID']).strip().upper()
-
-
 
 # --- GET METRICS WITH CORRECT HECTARE ---
 with st.spinner("Calculating metrics..."):
