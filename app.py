@@ -143,7 +143,7 @@ import tempfile, zipfile, os, json
 import geopandas as gpd
 
 st.sidebar.header("Farm Input Data")
-input_method = st.sidebar.radio("Boundary Input Type", ["Single Point (Lat/Lon)", "Enter Coordinates List", "Upload Shapefile.zip", "Upload CSV 4-Point"])
+input_method = st.sidebar.radio("Boundary Input Type", ["Single Point (Lat/Lon)", "Enter Coordinates List", "Upload Shapefile.zip"])
 
 farm_name = st.sidebar.text_input("Farm Name", "RONI-001")
 soil_carbon = st.sidebar.slider("Current Soil Carbon (%)", 0.1, 5.0, 1.2)
